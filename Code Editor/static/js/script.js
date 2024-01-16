@@ -1,3 +1,4 @@
+
 // Editor is in the global scope if accessed by other functions
 let editor;
 
@@ -6,20 +7,20 @@ let currentPage = 1; // first page
 const perPage = 10; 
 
 
-// Parses the code in the editor to find and display function names.
-// It updates the 'function-list' DOM element with the names of the functions.
 
+
+
+// Function to parse and display functions
 function parseAndDisplayFunctions() {
     const code = editor.getValue();
-    const functionPattern = /def\s+(\w+)\s*\(/g; // Corrected regex pattern
+    const functionPattern = /def\s+(\w+)\s*\(/g;
     let matches;
     const functionsList = document.getElementById('function-list');
-    functionsList.innerHTML = ''; 
+    functionsList.innerHTML = '';
 
-    // Loop through all matches and append them as list items to the function list
     while ((matches = functionPattern.exec(code)) !== null) {
         let li = document.createElement('li');
-        li.textContent = matches[1]; // matches[1] contains the function name
+        li.textContent = matches[1];
         functionsList.appendChild(li);
     }
 }
@@ -27,23 +28,23 @@ function parseAndDisplayFunctions() {
 // Loads and displays the list of files from the server.
 // It makes a fetch request to '/list-files' endpoint and updates the 'file-list' DOM element.
 
-function loadFileList() {
-    const fileList = document.getElementById('file-list'); // Define fileList here
-
-    fetch('/list-files') // endpoint as per server implementation
+// Function to load the list of files from the server
+function loadFileList(page) {
+    const fileList = document.getElementById('file-list');
+    fetch(`/list-files?page=${page}`)
         .then(response => {
             if (!response.ok) {
                 throw new Error('Network response was not ok ' + response.statusText);
             }
-            return response.json(); // Parse JSON only if the response is ok
+            return response.json();
         })
         .then(data => {
-            if (Array.isArray(data.files)) { // Check if data.files is an array
-                // Populate the file list
+            if (Array.isArray(data.files)) {
+                fileList.innerHTML = '';
                 data.files.forEach(file => {
                     const li = document.createElement('li');
                     li.textContent = file;
-                    li.addEventListener('click', () => openFile(file)); // Add a click event to open the file
+                    li.addEventListener('click', () => openFile(file));
                     fileList.appendChild(li);
                 });
             } else {
@@ -55,16 +56,18 @@ function loadFileList() {
         });
 }
 
+document.getElementById('load-btn').addEventListener('click', function() {
+    document.getElementById('file-input').click();
+});
 
 
-// Opens a file and loads its content into the editor.
-// It takes a filePath as a parameter and makes a fetch request to the '/open-file' endpoint.
+// Function to open a file and load its content into the editor
 function openFile(filePath) {
     fetch(`/open-file?path=${encodeURIComponent(filePath)}`)
         .then(response => response.json())
         .then(data => {
             if (data.status === 'success') {
-                editor.setValue(data.content); // Load file content into the editor
+                editor.setValue(data.content);
             } else {
                 console.error('Open file error:', data.message);
             }
@@ -94,43 +97,36 @@ function goToPreviousPage() {
 
 
 
-// Executes Python code from the editor.
-// It sends the code to the '/execute' endpoint and handles the response.
+
+// Function to execute Python code from the editor
 function executePythonCode(code) {
     fetch('/execute', {
         method: 'POST',
         body: JSON.stringify({ code: code }),
         headers: { 'Content-Type': 'application/json' }
     })
-    .then(response => response.json())
-    .then(data => {
-        const result = data.result;
-        const lintingResult = data.lintingResult; // Extract linting results
-        document.getElementById('output-area').textContent = result;
+        .then(response => response.json())
+        .then(data => {
+            const result = data.result;
+            const lintingResult = data.lintingResult;
+            document.getElementById('output-area').textContent = result;
 
-        // Display linting results in the 'linting-results' div
-        const lintingResultsDiv = document.getElementById('linting-results');
-        lintingResultsDiv.innerHTML = ''; // Clear existing content
+            const lintingResultsDiv = document.getElementById('linting-results');
+            lintingResultsDiv.innerHTML = '';
 
-        // Check if lintingResult is defined and an array before looping through it
-        if (Array.isArray(lintingResult)) {
-            // Format and display linting results
-            lintingResult.forEach(item => {
-                const resultItem = document.createElement('div');
-                resultItem.className = item.type === 'error' ? 'linting-error' : 'linting-warning';
-                resultItem.textContent = item.message;
-                lintingResultsDiv.appendChild(resultItem);
-            });
-        } else if (lintingResult !== undefined) {
-            console.error('Linting results are not an array:', lintingResult);
-        }
-    })
-    .catch(error => {
-        console.error('Execution error:', error);
-        document.getElementById('output-area').textContent = 'Error executing code.';
-    });
+            if (Array.isArray(lintingResult)) {
+                lintingResult.forEach(error => {
+                    const errorDiv = document.createElement('div');
+                    errorDiv.classList.add('linting-error');
+                    errorDiv.textContent = `${error.row}:${error.column} - ${error.message}`;
+                    lintingResultsDiv.appendChild(errorDiv);
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Execution error:', error);
+        });
 }
-
 
 
 // Saves the current code to a file on the server.
@@ -182,16 +178,19 @@ document.getElementById('save-btn').addEventListener('click', function() {
 // Toggles comment state for the selected range in the editor.
 // Checks if the editor instance has necessary methods before performing the action.
 
+// Function to toggle comment state for the selected range in the editor
 function toggleComment() {
-  
-    if (editor && typeof editor.getCursor === "function" && typeof editor.toggleComment === "function") {
-        var range = { from: editor.getCursor(true), to: editor.getCursor(false) };
-        editor.toggleComment(range.from, range.to);
-    } else {
-        console.error('toggleComment function is not available on the editor instance.');
-    }
+    const selections = editor.listSelections();
+    editor.operation(() => {
+        for (const selection of selections) {
+            const { anchor, head } = selection;
+            editor.toggleComment({
+                from: anchor,
+                to: head,
+            });
+        }
+    });
 }
-
 // Sets up the event listener for the 'Run Code' button.
 // On click, it executes the Python code currently in the editor.
 function setupRunButton() {
@@ -307,9 +306,9 @@ document.addEventListener('DOMContentLoaded', function() {
         lineNumbers: true,
         mode: "python",
         theme: "monokai",
-        autoCloseBrackets: true,
+        autoCloseBrackets: true, // Auto bracketing
         matchBrackets: true,
-        foldGutter: true,
+        foldGutter: true,       // Code folding/gutter
         gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter"],
         smartIndent: true,
         lint: true,
@@ -318,16 +317,12 @@ document.addEventListener('DOMContentLoaded', function() {
         fullScreen: false,
         viewportMargin: Infinity,
         extraKeys: {
-            "Ctrl-Q": function (cm) {
-                cm.foldCode(cm.getCursor());
-            },
-            "Ctrl-F": "findPersistent",
+            "Ctrl-Q": function (cm) { cm.foldCode(cm.getCursor()); },
+            "Ctrl-F": "findPersistent", // Search/Replace
             "Ctrl-R": "replace",
             "Shift-Ctrl-R": "replaceAll",
-            "Ctrl-Space": "autocomplete", 
-            "Ctrl-/": function (cm) {
-                cm.toggleComment();
-            },
+            "Ctrl-Space": "autocomplete",  // Autocompletion
+            "Ctrl-/": function (cm) { cm.toggleComment(); },
         },
         styleActiveLine: true,
         placeholder: "Write your Python code here",
@@ -352,6 +347,31 @@ document.addEventListener('DOMContentLoaded', function() {
         },
     });
 
+    // Add event listener for linting
+    document.getElementById('lint-btn').addEventListener('click', function () {
+        const lintResults = lintPythonCode(editor.getValue());
+        displayLintResults(lintResults);
+    });
+
+
+function displayLintResults(lintResults) {
+    const resultsContainer = document.getElementById('lint-results');
+    resultsContainer.innerHTML = ''; // Clear previous results
+
+    if (lintResults.length === 0) {
+        resultsContainer.innerHTML = '<p>No linting errors or warnings found.</p>';
+        return;
+    }
+
+    lintResults.forEach(result => {
+        const resultItem = document.createElement('div');
+        resultItem.className = 'lint-result-item';
+        resultItem.classList.add(result.type === 'error' ? 'lint-error' : 'lint-warning');
+        resultItem.textContent = `${result.type.toUpperCase()}: Line ${result.line}: ${result.message}`;
+        resultsContainer.appendChild(resultItem);
+    });
+}
+
 
     // Set up a single DOMContentLoaded event listener
     document.addEventListener('DOMContentLoaded', initializeApp);
@@ -363,6 +383,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
     // Handle the insertion of selected suggestions when Enter or Tab is pressed
+
     editor.on('keydown', (cm, event) => {
         const selectedSuggestion = cm.state.completionActive?.data;
         if (selectedSuggestion && (event.key === 'Enter' || event.key === 'Tab')) {
@@ -370,6 +391,7 @@ document.addEventListener('DOMContentLoaded', function() {
             cm.replaceRange(selectedSuggestion, cm.getCursor(), cm.getCursor(), '+input');
         }
     });
+
 
     editor.setOption("extraKeys", {
         "Ctrl-Shift-S": function(cm) {
@@ -422,20 +444,19 @@ document.addEventListener('DOMContentLoaded', function() {
       
       const snippetDropdown = document.getElementById('snippet-dropdown');
       Object.keys(snippets).forEach(key => {
-        let option = document.createElement('option');
-        option.value = key;
-        option.textContent = key;
-        snippetDropdown.appendChild(option);
+          let option = document.createElement('option');
+          option.value = key;
+          option.textContent = key;
+          snippetDropdown.appendChild(option);
       });
-
-      
+  
       snippetDropdown.addEventListener('change', () => {
-        const selectedSnippet = snippets[snippetDropdown.value];
-        if (selectedSnippet) {
-          insertSnippet(editor, selectedSnippet);
-        }
+          const selectedSnippet = snippets[snippetDropdown.value];
+          if (selectedSnippet) {
+              insertSnippet(editor, selectedSnippet);
+          }
       });
-
+    
 
       function updateContextualSnippets() {
         const codeContext = determineCodeContext(editor); 
@@ -473,16 +494,16 @@ document.getElementById('toggle-comment-btn').addEventListener('click', toggleCo
 });
 
 
-// Function to set up the run button event listener
+// Function to set up the 'Run Code' button event listener
 function setupRunButton() {
-const runButton = document.getElementById('run-code-btn');
-if (runButton) {
-runButton.addEventListener('click', function() {
-executePythonCode(editor.getValue()); // Gets code from CodeMirror editor
-});
-} else {
-console.error('Run button not found');
-}
+    const runButton = document.getElementById('run-code-btn');
+    if (runButton) {
+        runButton.addEventListener('click', function () {
+            executePythonCode(editor.getValue());
+        });
+    } else {
+        console.error('Run button not found');
+    }
 }
 
 document.getElementById('feedback-btn').addEventListener('click', () => {
@@ -525,9 +546,17 @@ function updateContextualSnippets() {
     });
 }
 
-document.getElementById('load-btn').addEventListener('click', function() {
-    document.getElementById('file-input').click();
-});
+    // Event listener for loading a file
+    document.getElementById('file-input').addEventListener('change', function (event) {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                editor.setValue(e.target.result);
+            };
+            reader.readAsText(file);
+        }
+    });
 
 document.getElementById('file-input').addEventListener('change', function(event) {
     const file = event.target.files[0];
@@ -558,7 +587,7 @@ document.querySelectorAll('#function-list li').forEach(function(item) {
         infoDiv.style.display = 'block';
     });
 });
-// Declare the linting function
+
 function lintPythonCode(code) {
     // Split the code into lines
     const lines = code.split('\n');
@@ -570,14 +599,14 @@ function lintPythonCode(code) {
     for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
         if (line.length > 80) {
-          
             lintingResults.push({
-                type: 'error', // 'error' or 'warning'
                 message: `Line ${i + 1} is longer than 80 characters.`,
+                severity: 'error', // 'error' or 'warning'
+                from: CodeMirror.Pos(i, 80), // Position where the error starts
+                to: CodeMirror.Pos(i, line.length), // Position where the error ends
             });
         }
     }
-
 
     // Return the linting results
     return lintingResults;
@@ -619,12 +648,10 @@ const lintingResults = lintPythonCode(pythonCode);
 console.log(lintingResults); // Display linting results in the console
 
 
+    // Event listener for the home button
+    document.getElementById('home-btn').addEventListener('click', function () {
+        location.reload();
+    });
 
-// Get a reference to the home button element
-const homeButton = document.getElementById('home-btn');
-
-// Add a click event listener to the home button
-homeButton.addEventListener('click', function() {
-    // Refresh the page
-    location.reload();
-});
+    // Initialize the application when the DOM is ready
+    document.addEventListener('DOMContentLoaded', initializeApp);

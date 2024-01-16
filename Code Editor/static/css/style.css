@@ -361,3 +361,26 @@ nav button:hover {
 #function-list li:hover {
     background-color: #777; /* Background color when hovering over function names */
 }
+
+.lint-results-container {
+    /* Add your styling here */
+    padding: 10px;
+    margin-top: 10px;
+    background-color: #ffefef;
+    border: 1px solid #ffcccc;
+    border-radius: 5px;
+}
+
+.lint-result-item {
+padding: 5px;
+margin-bottom: 5px;
+border-bottom: 1px solid #ffcccc;
+}
+
+.lint-error {
+color: red;
+}
+
+.lint-warning {
+color: orange;
+}
