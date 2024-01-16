@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Code Editor</title>
+    <!-- CodeMirror CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/monokai.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/hint/show-hint.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/lint/lint.min.css">
+        
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="./static/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
+</head>
+<body>
+
+    <div id="code-editor-header">
+        <h2>PYTHON CODE EDITOR</h2>
+    </div>
+
+    <nav>
+        <div class="nav-group">
+            <button id="home-btn"><i class="fas fa-home"></i> Home</button>
+            <button id="load-btn"><i class="fas fa-folder-open"></i> Load File</button>
+            <input type="file" id="file-input" style="display: none;" />
+            <button id="save-btn"><i class="fas fa-save"></i> Save to Disk</button>
+        </div>
+        <div class="nav-group">
+            <button id="run-code-btn"><i class="fas fa-play"></i> Run</button>
+            <button id="toggle-comment-btn"><i class="fas fa-comments"></i> Toggle Comment</button>
+        </div>
+    </nav>
+    
+
+    <div id="file-explorer">
+        <h3>File Explorer</h3>
+        <ul id="file-list">
+            <!-- File list items will be added dynamically here -->
+        </ul>
+    </div>
+
+</div>
+
+
+    <div id="container">
+        <section id="main">
+            <!-- Code Editor Textarea -->
+            <div id="editor-container">
+                <textarea id="code-editor"></textarea>
+
+                <select id="snippet-dropdown">
+                    <option value="">Select a Snippet...</option>
+                    <!-- Snippet options will be populated here -->
+                  </select>
+                  
+            </div>
+
+            <!-- Output Area -->
+            <div id="output-container">
+                <div id="output-area">Output will be displayed here...</div>
+            </div>
+
+            <div class="nav-group" id="function-list-container">
+                <ul id="function-list">
+                    <li>lint_python</li>
+                    <li>is_safe_path</li>
+                    <li>list_files</li>
+                </ul>
+            </div>
+
+
+            <div id="linting-results"></div>
+
+            <button id="feedback-btn">Provide Feedback</button>
+
+
+            
+        </section>
+    </div>
+
+    <!-- CodeMirror JavaScript -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/python/python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/hint/show-hint.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/lint/lint.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/search/search.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/dialog/dialog.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/search/searchcursor.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/search/jump-to-line.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.61.0/addon/comment/comment.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/search/search.js"></script>
+
+
+
+
+    <!-- Brython JavaScript -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/brython/3.9.6/brython.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/brython/3.9.6/brython_stdlib.js"></script>
+
+    <!-- Custom JS -->
+    <script src="./static/js/script.js"></script>
+</body>
+</html>
