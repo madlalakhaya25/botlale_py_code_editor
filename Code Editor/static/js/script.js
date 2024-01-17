@@ -1,13 +1,9 @@
-
 // Editor is in the global scope if accessed by other functions
 let editor;
 
 
 let currentPage = 1; // first page
 const perPage = 10; 
-
-
-
 
 
 // Function to parse and display functions
@@ -190,18 +186,6 @@ function toggleComment() {
             });
         }
     });
-}
-// Sets up the event listener for the 'Run Code' button.
-// On click, it executes the Python code currently in the editor.
-function setupRunButton() {
-    const runButton = document.getElementById('run-code-btn');
-    if (runButton) {
-        runButton.addEventListener('click', function() {
-            executePythonCode(editor.getValue()); // Get code from CodeMirror editor
-        });
-    } else {
-        console.error('Run button not found');
-    }
 }
 
 // Extracts function names from the given Python code.
@@ -485,9 +469,6 @@ function displayLintResults(lintResults) {
 // Load the first page of files
 loadFileList(1);
 
-// Setup run button event listener
-setupRunButton();
-
 // Setup comment and uncomment button event listeners
 document.getElementById('toggle-comment-btn').addEventListener('click', toggleComment);
 
@@ -589,63 +570,117 @@ document.querySelectorAll('#function-list li').forEach(function(item) {
 });
 
 function lintPythonCode(code) {
-    // Split the code into lines
-    const lines = code.split('\n');
-    
-    // Initialize an array to store linting messages
     const lintingResults = [];
 
-    // Example linting logic: Check for lines longer than 80 characters
+    // Check for lines longer than 79 characters (PEP 8 recommendation)
+    const lines = code.split('\n');
     for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
-        if (line.length > 80) {
+        if (line.length > 79) {
             lintingResults.push({
-                message: `Line ${i + 1} is longer than 80 characters.`,
-                severity: 'error', // 'error' or 'warning'
-                from: CodeMirror.Pos(i, 80), // Position where the error starts
-                to: CodeMirror.Pos(i, line.length), // Position where the error ends
+                message: `Line ${i + 1} exceeds 79 characters (PEP 8 recommendation).`,
+                type: 'warning',
+                row: i + 1,
+                column: 80, // Suggested column limit
             });
         }
     }
 
-    // Return the linting results
+    // Check for trailing whitespace
+    for (let i = 0; i < lines.length; i++) {
+        if (/\s+$/.test(lines[i])) {
+            lintingResults.push({
+                message: `Trailing whitespace found on line ${i + 1}.`,
+                type: 'warning',
+                row: i + 1,
+                column: lines[i].length,
+            });
+        }
+    }
+
+    // Check for missing docstrings for functions and classes
+    const functionPattern = /def\s+(\w+)\s*\(/g;
+    const classPattern = /class\s+(\w+)\s*:/g;
+    
+    const functionMatches = code.match(functionPattern) || [];
+    const classMatches = code.match(classPattern) || [];
+    
+    functionMatches.forEach((match, index) => {
+        if (!/""".*?"""/s.test(match)) {
+            // Docstring not found for function
+            lintingResults.push({
+                message: `Missing docstring for function ${match.split(' ')[1]} on line ${functionMatches.index + index + 1}.`,
+                type: 'warning',
+                row: functionMatches.index + index + 1,
+                column: 0,
+            });
+        }
+    });
+    
+    classMatches.forEach((match, index) => {
+        if (!/""".*?"""/s.test(match)) {
+            // Docstring not found for class
+            lintingResults.push({
+                message: `Missing docstring for class ${match.split(' ')[1]} on line ${classMatches.index + index + 1}.`,
+                type: 'warning',
+                row: classMatches.index + index + 1,
+                column: 0,
+            });
+        }
+    });
+
+    // Check for incorrect indentation
+    const indentationStack = [];
+   
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        const indentationLevel = line.search(/\S/); // Find the first non-whitespace character's position
+   
+        if (indentationStack.length > 0) {
+            const expectedIndentation = indentationStack[indentationStack.length - 1];
+   
+            if (indentationLevel !== expectedIndentation) {
+                lintingResults.push({
+                    message: `Incorrect indentation on line ${i + 1}. Expected ${expectedIndentation} spaces, found ${indentationLevel}.`,
+                    type: 'error',
+                    row: i + 1,
+                    column: indentationLevel,
+                });
+            }
+        }
+   
+        // Update the stack with the new indentation level
+        indentationStack.push(indentationLevel);
+    }
+
+    // Check for unused variables
+    const variablePattern = /\b(\w+)\s*=/g;
+    const declaredVariables = new Set();
+   
+    let match;
+    while ((match = variablePattern.exec(code))) {
+        declaredVariables.add(match[1]);
+    }
+   
+    // Analyze the code to find variable usages and mark unused variables
+    declaredVariables.forEach((variable) => {
+        const usagePattern = new RegExp(`\\b${variable}\\b`, 'g');
+        const usages = code.match(usagePattern);
+   
+        if (usages && usages.length === 1) {
+            // Only one usage (the declaration itself), consider it unused
+            lintingResults.push({
+                message: `Unused variable: ${variable}.`,
+                type: 'warning',
+                row: code.substring(0, usages.index).split('\n').length,
+                column: usages.index,
+            });
+        }
+    });
+
     return lintingResults;
 }
-const lintButton = document.getElementById('lint-button');
-const lintingResultsDiv = document.getElementById('linting-results');
 
-if (lintButton && lintingResultsDiv) {
-    lintButton.addEventListener('click', function() {
-        // Call the linting function with the correct name
-        const lintingResults = lintPythonCode(editor.getValue());
-
-        // Clear existing linting results
-        lintingResultsDiv.innerHTML = '';
-
-        // Display linting results in the 'linting-results' div
-        lintingResults.forEach(item => {
-            const resultItem = document.createElement('div');
-            resultItem.className = item.type === 'error' ? 'linting-error' : 'linting-warning';
-            resultItem.textContent = item.message;
-            lintingResultsDiv.appendChild(resultItem);
-        });
-
-        // Show linting results
-        lintingResultsDiv.style.display = 'block';
-
-        // Add a click event listener to the document body to hide linting results when clicked outside
-        document.body.addEventListener('click', function(event) {
-            if (!lintingResultsDiv.contains(event.target) && event.target !== lintButton) {
-                // Clicked outside the linting results and lint button, hide linting results
-                lintingResultsDiv.style.display = 'none';
-            }
-        });
-    });
-}
-
-const pythonCode = "print('Hello, world!')\n# This line is longer than 80 characters, so it should trigger a linting error";
-const lintingResults = lintPythonCode(pythonCode);
-console.log(lintingResults); // Display linting results in the console
 
 
     // Event listener for the home button
