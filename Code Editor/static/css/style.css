@@ -235,44 +235,6 @@ nav button:hover {
     gap: 10px; /* Add space between list items */
 }
 
-/* Style for the li elements in the Function List */
-#function-list li {
-    display: inline-block; /* Make each li an inline block for horizontal layout */
-    padding: 5px 10px; /* Add padding for visual space around the text */
-    margin-right: 10px; /* Add margin to the right for spacing between items */
-    background-color: #4CAF50; /* Background color */
-    color: white; /* Text color */
-    border: 1px solid #ccc; /* Border for each list item */
-    border-radius: 4px; /* Rounded corners for each list item */
-    cursor: pointer; /* Change cursor to indicate clickable items */
-    transition: background-color 0.3s; /* Smooth transition for hover effect */
-}
-
-#function-list li:hover {
-    background-color: #777; /* Background color when hovering over function names */
-}
-
-/* Linting Results */
-.linting-error {
-    color: #ff0000; /* Red for errors */
-    font-weight: bold;
-}
-
-.linting-warning {
-    color: #ff8c00; /* Orange for warnings */
-}
-
-#linting-results {
-    display: none;
-    border: 1px solid #ccc;
-    padding: 10px;
-    margin-top: 10px;
-    background-color: #f9f9f9;
-    color: #333;
-    font-family: Arial, sans-serif;
-    margin-bottom: 20px; /* Add margin at the bottom */
-}
-
 #feedback-btn {
     margin-top: 20px; /* Add margin at the top */
 }
@@ -383,4 +345,8 @@ color: red;
 
 .lint-warning {
 color: orange;
+}
+
+.highlight-line {
+    background-color: yellow; /* Or any color you prefer */
 }

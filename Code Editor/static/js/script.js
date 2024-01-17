@@ -1,10 +1,8 @@
 // Editor is in the global scope if accessed by other functions
 let editor;
 
-
 let currentPage = 1; // first page
 const perPage = 10; 
-
 
 // Function to parse and display functions
 function parseAndDisplayFunctions() {
@@ -14,15 +12,77 @@ function parseAndDisplayFunctions() {
     const functionsList = document.getElementById('function-list');
     functionsList.innerHTML = '';
 
+    // Clear any existing markers
+    editor.getAllMarks().forEach(mark => mark.clear());
+
+    // We need to handle click events on individual list items, not on the entire list
+    functionsList.onclick = function(event) {
+        let target = event.target; // Where was the click?
+        if (target.tagName !== 'LI') return; // Not on LI? Then we're not interested
+        
+        highlightFunction(target);
+    };
+
     while ((matches = functionPattern.exec(code)) !== null) {
+        const startPos = editor.posFromIndex(matches.index); // Convert index to line and ch
+        // We need to find the end of the function, which is a bit more complex than lastIndex
         let li = document.createElement('li');
         li.textContent = matches[1];
+        li.setAttribute('data-start-line', startPos.line); // Store the starting line number
+        // We won't set the end line here because it's not trivial to find
         functionsList.appendChild(li);
     }
 }
 
-// Loads and displays the list of files from the server.
-// It makes a fetch request to '/list-files' endpoint and updates the 'file-list' DOM element.
+
+// Separate function to handle highlighting of the function name
+function highlightFunction(listItem) {
+    const startLine = parseInt(listItem.getAttribute('data-start-line'));
+    const functionName = listItem.textContent; // Get the function name from the list item
+    // Move cursor to the start of the function name
+    editor.setCursor({line: startLine, ch: 0});
+
+    // Remove existing highlights
+    editor.getAllMarks().forEach(mark => mark.clear());
+
+    // Highlight just the function name
+    editor.markText(
+        { line: startLine, ch: 0 },
+        { line: startLine, ch: functionName.length },
+        { className: 'highlight-line' }
+    );
+
+
+    // Scroll to the function's position
+    editor.scrollIntoView({line: startLine, ch: 0});
+
+    // Add an event listener to clear the highlight when Escape key is pressed
+    const removeHighlightOnEscape = (event) => {
+        if (event.key === 'Escape') {
+            editor.getAllMarks().forEach(mark => mark.clear());
+            document.removeEventListener('keydown', removeHighlightOnEscape);
+        }
+    };
+
+    document.addEventListener('keydown', removeHighlightOnEscape);
+}
+
+
+const removeHighlightOnEscape = (event) => {
+    if (event.key === 'Escape') {
+        editor.getAllMarks().forEach(mark => mark.clear());
+        document.removeEventListener('keydown', removeHighlightOnEscape);
+
+        // Reset the 'function-list' selection
+        const functionsList = document.getElementById('function-list');
+        functionsList.querySelectorAll('li').forEach(item => {
+            item.classList.remove('selected');
+        });
+    }
+};
+
+document.addEventListener('keydown', removeHighlightOnEscape);
+
 
 // Function to load the list of files from the server
 function loadFileList(page) {
@@ -73,8 +133,17 @@ function openFile(filePath) {
         });
 }
 
-// Call loadFileList when the page loads
-
+// Define a function to handle the file input change event
+function handleFileInputChange(event) {
+    const file = event.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            editor.setValue(e.target.result);
+        };
+        reader.readAsText(file);
+    }
+}
 
 
 // Handles pagination by incrementing/decrementing the current page.
@@ -154,21 +223,13 @@ function saveFile(code, fileName) {
     document.body.removeChild(a);
 }
 
-// Example usage:
+
 document.getElementById('save-btn').addEventListener('click', function() {
     var code = editor.getValue(); // Assuming 'editor' is the code editor instance
     var fileName = 'my_document.txt'; 
     saveFile(code, fileName);
 });
 
-
-document.getElementById('save-btn').addEventListener('click', function() { 
-    // 'editor' is the code editor instance
-    var code = editor.getValue(); 
-    var filePath = 'C:\\Users\\KM\\venv\\Code Editor'; // actual file path
-
-    saveFile(code, filePath); 
-});
 
 
 // Toggles comment state for the selected range in the editor.
@@ -205,31 +266,30 @@ function extractFunctionNames(code) {
         // Load file list
         loadFileList();
     
-        // Set up function list click events
-        const functionList = document.getElementById('function-list');
-        functionList.addEventListener('click', function(e) {
-            if (e.target && e.target.nodeName === "LI") {
-                const functionName = e.target.textContent;
-    
-                switch (functionName) {
-                    case 'lint_python':
-                        lintPythonCode(editor.getValue());
-                        break;
-                    case 'is_safe_path':
-                        checkSafePath();
-                        break;
-                    case 'save_file':
-                        // Call your save file logic here
-                        break;
-                    // Handle other function names as needed
-                    default:
-                        console.error(`Unknown function: ${functionName}`);
-                        break;
-                }
-            }
-        });
+    // Set up function list click events
+    const functionList = document.getElementById('function-list');
+    functionList.addEventListener('click', function (e) {
+        if (e.target && e.target.nodeName === "LI") {
+            const functionName = e.target.textContent;
 
-    }
+            switch (functionName) {
+                case 'lint_python':
+                    lintPythonCode(editor.getValue());
+                    break;
+                case 'is_safe_path':
+                    checkSafePath();
+                    break;
+                case 'save_file':
+                    // Call your save file logic here
+                    break;
+                // Handle other function names as needed
+                default:
+                    console.error(`Unknown function: ${functionName}`);
+                    break;
+            }
+        }
+    });
+}
 
     function openFileOrFolder(path) {
         fetch(`/open-file-or-folder?path=${encodeURIComponent(path)}`)
@@ -283,8 +343,25 @@ function extractFunctionNames(code) {
         });
     }
     
+   import { autocompleteWords } from './autocompletewords.js';
 
-document.addEventListener('DOMContentLoaded', function() {
+    // Now you can use the autocompleteWords array in your main script
+    console.log(autocompleteWords); // Example usage
+
+// Wrap your event listener code in a function
+function attachEditorEventListeners() {
+    // Attach event listeners to the editor object
+    if (editor) {
+        // Attach your event listeners here
+        editor.on('change', parseAndDisplayFunctions);
+        // ...other event listeners
+    } else {
+        console.error('Editor is not initialized.');
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+
     // Initialize CodeMirror editor
     editor = CodeMirror.fromTextArea(document.getElementById("code-editor"), {
         lineNumbers: true,
@@ -300,14 +377,6 @@ document.addEventListener('DOMContentLoaded', function() {
         lintMode: "python",
         fullScreen: false,
         viewportMargin: Infinity,
-        extraKeys: {
-            "Ctrl-Q": function (cm) { cm.foldCode(cm.getCursor()); },
-            "Ctrl-F": "findPersistent", // Search/Replace
-            "Ctrl-R": "replace",
-            "Shift-Ctrl-R": "replaceAll",
-            "Ctrl-Space": "autocomplete",  // Autocompletion
-            "Ctrl-/": function (cm) { cm.toggleComment(); },
-        },
         styleActiveLine: true,
         placeholder: "Write your Python code here",
         hintOptions: {
@@ -316,19 +385,36 @@ document.addEventListener('DOMContentLoaded', function() {
                 const token = cm.getTokenAt(cursor); // Gets the token at the cursor position
                 const start = token.start;
                 const end = cursor.ch; // End of the current word
-    
-                // Use the 'anyword' hint function with a custom list of words
-                const wordList = ['function1', 'function2', 'variable1', 'variable2']; // Customize this list
-                const matchedWords = wordList.filter(word => word.startsWith(token.string));
-    
+
+                // Filter the autocomplete words that start with the token string
+                const matchedWords = autocompleteWords.filter(word => word.startsWith(token.string));
+
                 return {
                     list: matchedWords,
                     from: CodeMirror.Pos(cursor.line, start),
                     to: CodeMirror.Pos(cursor.line, end),
                 };
+
             },
-            // ... (other hint options)
+            completeSingle: false, // Enable autocomplete while typing
         },
+    });
+
+    // Call the function to attach event listeners
+    attachEditorEventListeners();
+
+    let autocompleteTimer = null;
+
+    editor.on('inputRead', (cm, event) => {
+        // Clear the previous timer (if any) to avoid multiple triggers
+        if (autocompleteTimer) {
+            clearTimeout(autocompleteTimer);
+        }
+
+        // Set a new timer to trigger autocomplete after a delay (e.g., 500 milliseconds)
+        autocompleteTimer = setTimeout(() => {
+            cm.showHint(); // Trigger autocomplete
+        }, 500);
     });
 
     // Add event listener for linting
@@ -337,78 +423,83 @@ document.addEventListener('DOMContentLoaded', function() {
         displayLintResults(lintResults);
     });
 
+    function displayLintResults(lintResults) {
+        const resultsContainer = document.getElementById('lint-results');
+        resultsContainer.innerHTML = ''; // Clear previous results
 
-function displayLintResults(lintResults) {
-    const resultsContainer = document.getElementById('lint-results');
-    resultsContainer.innerHTML = ''; // Clear previous results
+        if (lintResults.length === 0) {
+            resultsContainer.innerHTML = '<p>No linting errors or warnings found.</p>';
+            return;
+        }
 
-    if (lintResults.length === 0) {
-        resultsContainer.innerHTML = '<p>No linting errors or warnings found.</p>';
-        return;
+        lintResults.forEach(result => {
+            const resultItem = document.createElement('div');
+            resultItem.className = 'lint-result-item';
+            resultItem.classList.add(result.type === 'error' ? 'lint-error' : 'lint-warning');
+            resultItem.textContent = `${result.type.toUpperCase()}: Line ${result.line}: ${result.message}`;
+            resultsContainer.appendChild(resultItem);
+        });
     }
 
-    lintResults.forEach(result => {
-        const resultItem = document.createElement('div');
-        resultItem.className = 'lint-result-item';
-        resultItem.classList.add(result.type === 'error' ? 'lint-error' : 'lint-warning');
-        resultItem.textContent = `${result.type.toUpperCase()}: Line ${result.line}: ${result.message}`;
-        resultsContainer.appendChild(resultItem);
-    });
-}
-
-
-    // Set up a single DOMContentLoaded event listener
-    document.addEventListener('DOMContentLoaded', initializeApp);
-
     // Existing autocomplete function
-    CodeMirror.commands.autocomplete = function(cm) {
+    CodeMirror.commands.autocomplete = function (cm) {
         cm.showHint({ hint: CodeMirror.hint.anyword });
     };
 
-
     // Handle the insertion of selected suggestions when Enter or Tab is pressed
-
     editor.on('keydown', (cm, event) => {
+        console.log('Key pressed:', event.key); // Add this line for debugging
         const selectedSuggestion = cm.state.completionActive?.data;
+
         if (selectedSuggestion && (event.key === 'Enter' || event.key === 'Tab')) {
-            event.preventDefault();
+            event.preventDefault(); // Prevent default behavior (e.g., line break)
             cm.replaceRange(selectedSuggestion, cm.getCursor(), cm.getCursor(), '+input');
         }
     });
 
-
     editor.setOption("extraKeys", {
-        "Ctrl-Shift-S": function(cm) {
-          // Logic to open or focus the snippet dropdown
-          document.getElementById('snippet-dropdown').focus();
+        "Ctrl-Shift-S": function (cm) {
+            // Logic to open or focus the snippet dropdown
+            document.getElementById('snippet-dropdown').focus();
         }
-      });
-
-
-      // Update function list when the code changes
-      editor.on("change", () => {
-    const code = editor.getValue();
-    const functionList = extractFunctionNames(code);
-    const functionListContainer = document.getElementById("function-list");
-
-    // Clear existing list
-    functionListContainer.innerHTML = "";
-
-    // Populate the function list
-    functionList.forEach((func) => {
-        const listItem = document.createElement("li");
-        listItem.textContent = func;
-   
-        functionListContainer.appendChild(listItem);
     });
-});
 
-// Inserts a selected code snippet at the cursor position in the editor.
-// Takes the editor instance and the snippet string as parameters.
-    function insertSnippet(editor, snippet) {
-        var doc = editor.getDoc();
-        var cursor = doc.getCursor(); // Gets the line number in the cursor position
-        doc.replaceRange(snippet, cursor);
+    // Update function list when the code changes
+    editor.on("change", () => {
+        const code = editor.getValue();
+        const functionList = extractFunctionNames(code);
+        const functionListContainer = document.getElementById("function-list");
+
+        // Clear existing list
+        functionListContainer.innerHTML = "";
+
+        // Populate the function list
+        functionList.forEach((func) => {
+            const listItem = document.createElement("li");
+            listItem.textContent = func;
+
+            functionListContainer.appendChild(listItem);
+        });
+    });
+
+    // Inserts a selected code snippet at the cursor position in the editor.
+    // Takes the editor instance and the snippet string as parameters.
+    function insertSnippet(editor, snippetText) {
+        const doc = editor.getDoc();
+        const cursor = doc.getCursor(); // Get the current cursor position
+        let lineContent = doc.getLine(cursor.line); // Get the content of the current line
+    
+        // If the current line is not empty, prepend a newline character to the snippet
+        if (lineContent.trim() !== '') {
+            snippetText = '\n' + snippetText;
+        }
+    
+        // Insert the snippet at the cursor position
+        doc.replaceRange(snippetText, cursor);
+    
+        // Optionally, move the cursor to the end of the inserted snippet
+        let endCursor = doc.getCursor(); // New cursor position after insertion
+        doc.setCursor({line: endCursor.line, ch: endCursor.ch});
     }
 
     const snippets = {
@@ -422,37 +513,35 @@ function displayLintResults(lintResults) {
         'List Comprehension': '[x for x in iterable]',
         'Dictionary Comprehension': '{key: value for key, value in iterable}',
         'Set Comprehension': '{expression for item in iterable}',
-     
-      };
+    };
 
-      
-      const snippetDropdown = document.getElementById('snippet-dropdown');
-      Object.keys(snippets).forEach(key => {
-          let option = document.createElement('option');
-          option.value = key;
-          option.textContent = key;
-          snippetDropdown.appendChild(option);
-      });
-  
-      snippetDropdown.addEventListener('change', () => {
-          const selectedSnippet = snippets[snippetDropdown.value];
-          if (selectedSnippet) {
-              insertSnippet(editor, selectedSnippet);
-          }
-      });
-    
+    const snippetDropdown = document.getElementById('snippet-dropdown');
+    Object.keys(snippets).forEach(key => {
+        let option = document.createElement('option');
+        option.value = key;
+        option.textContent = key;
+        snippetDropdown.appendChild(option);
+    });
 
-      function updateContextualSnippets() {
-        const codeContext = determineCodeContext(editor); 
+   // Existing event listener for snippet dropdown change
+snippetDropdown.addEventListener('change', () => {
+    const selectedSnippet = snippets[snippetDropdown.value];
+    if (selectedSnippet) {
+        insertSnippet(editor, selectedSnippet);
+    }
+});
+
+    function updateContextualSnippets() {
+        const codeContext = determineCodeContext(editor);
         // Filter and update the snippet dropdown
         // For example, showing only 'For Loop' in a certain context
         if (codeContext === 'loop') {
-          snippetDropdown.value = 'For Loop';
+            snippetDropdown.value = 'For Loop';
         }
-      }
-      editor.on("change", updateContextualSnippets);
-      
-    
+    }
+
+    editor.on("change", updateContextualSnippets);
+
     // Example usage
     insertSnippet(editor, "for (var i=0; i<10; i++) {\n\t// code\n}");
 
@@ -462,17 +551,17 @@ function displayLintResults(lintResults) {
     setupRunButton();
 
     // Add event listener for the toggle comment button
-    document.getElementById ('toggle-comment-btn').addEventListener('click', toggleComment);
+    document.getElementById('toggle-comment-btn').addEventListener('click', toggleComment);
     loadFileList(currentPage); // Load the initial page of files
 
+    // Load the first page of files
+    loadFileList(1);
 
-// Load the first page of files
-loadFileList(1);
-
-// Setup comment and uncomment button event listeners
-document.getElementById('toggle-comment-btn').addEventListener('click', toggleComment);
-
+    // Setup comment and uncomment button event listeners
+    document.getElementById('toggle-comment-btn').addEventListener('click', toggleComment);
 });
+
+// Remove this extra closing parenthesis at the end of the code.
 
 
 // Function to set up the 'Run Code' button event listener
@@ -488,7 +577,7 @@ function setupRunButton() {
 }
 
 document.getElementById('feedback-btn').addEventListener('click', () => {
-    // Open feedback form or modal
+    // 
   });
   
   function determineCodeContext(editor) {
@@ -682,11 +771,10 @@ function lintPythonCode(code) {
 }
 
 
-
     // Event listener for the home button
     document.getElementById('home-btn').addEventListener('click', function () {
         location.reload();
     });
 
-    // Initialize the application when the DOM is ready
+
     document.addEventListener('DOMContentLoaded', initializeApp);
