@@ -7,17 +7,33 @@ import tempfile  # Import tempfile module
 
 app = Flask(__name__)
 
-@app.route('/lint-python', methods=['POST'])
-def lint_python():
-    code = request.json.get('code')
-    if code is None:
-        return jsonify({'error': 'Code not provided'}), 400
+@app.route('/lint', methods=['POST'])
+def lint_code():
+    code = request.data.decode('utf-8')
+    lint_results = run_unified_linter(code)
+    return jsonify(lint_results)
 
-    try:
-        result = subprocess.check_output(['pyflakes', '-'], input=code, text=True, stderr=subprocess.STDOUT)
-        return jsonify({'result': result})
-    except subprocess.CalledProcessError as e:
-        return jsonify({'error': e.output}), 400
+def run_unified_linter(code):
+    # Assuming you choose flake8
+    with tempfile.NamedTemporaryFile(mode='w+', delete=False) as tmp:
+        tmp.write(code)
+        tmp_path = tmp.name
+
+    result = subprocess.run(['flake8', tmp_path], capture_output=True, text=True)
+    
+    lint_issues = []
+    for line in result.stdout.splitlines():
+        parts = line.split(':')
+        if len(parts) >= 4:
+            filename, line_number, column, message = parts[0], int(parts[1]), int(parts[2]), ':'.join(parts[3:])
+            lint_issues.append({
+                'line': line_number,
+                'column': column,
+                'message': message.strip()
+            })
+
+    return lint_issues
+
 
 # Configurable directory path
 DIRECTORY_PATH = pathlib.Path(os.getenv('DIRECTORY_PATH', 'C:\\Users\\KM\\venv\\Code Editor'))
@@ -111,11 +127,13 @@ def open_file():
         try:
             with file_path.open('r') as file:
                 content = file.read()
-            return jsonify({'status': 'success', 'content': content})
+            # Include the filename in the response
+            return jsonify({'status': 'success', 'content': content, 'filename': file_path.name})
         except IOError as e:
             return jsonify({'status': 'error', 'message': str(e)})
     else:
         return jsonify({'status': 'error', 'message': 'Unsafe file path'}), 400
+
 
 if __name__ == '__main__':
     app.run(debug=True)

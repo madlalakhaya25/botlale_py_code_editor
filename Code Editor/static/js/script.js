@@ -1,8 +1,10 @@
 // Editor is in the global scope if accessed by other functions
 let editor;
-
 let currentPage = 1; // first page
 const perPage = 10; 
+let lastSearchTerm = null;
+let searchCursor = null;
+
 
 // Function to parse and display functions
 function parseAndDisplayFunctions() {
@@ -112,18 +114,16 @@ function loadFileList(page) {
         });
 }
 
-document.getElementById('load-btn').addEventListener('click', function() {
-    document.getElementById('file-input').click();
-});
-
-
-// Function to open a file and load its content into the editor
+// Opens a file and loads its content into the editor.
+// It takes a filePath as a parameter and makes a fetch request to the '/open-file' endpoint.
 function openFile(filePath) {
     fetch(`/open-file?path=${encodeURIComponent(filePath)}`)
         .then(response => response.json())
         .then(data => {
             if (data.status === 'success') {
-                editor.setValue(data.content);
+                editor.setValue(data.content); // Load file content into the editor
+                // Use the filename from the response to update the active file display
+                document.getElementById("active-filename").textContent = `Active File: ${data.filename}`;
             } else {
                 console.error('Open file error:', data.message);
             }
@@ -133,34 +133,23 @@ function openFile(filePath) {
         });
 }
 
-// Define a function to handle the file input change event
-function handleFileInputChange(event) {
-    const file = event.target.files[0];
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = function (e) {
-            editor.setValue(e.target.result);
-        };
-        reader.readAsText(file);
+
+
+// Bind the "Ctrl+Shift+E" keyboard shortcut to open the file dialog
+document.addEventListener('keydown', function(event) {
+    if (event.ctrlKey && event.shiftKey && (event.key === 'E' || event.key === 'e')) { // Check for Ctrl+Shift+E (upper or lower case)
+        event.preventDefault(); // Prevent the browser's default behavior (e.g., opening bookmarks)
+
+        // Trigger the file dialog by clicking the hidden file input element
+        const fileInput = document.getElementById('file-input');
+        fileInput.click();
     }
-}
+});
 
-
-// Handles pagination by incrementing/decrementing the current page.
-// Calls loadFileList with the new page number.
-function goToNextPage() {
-    currentPage++;
-    loadFileList(currentPage);
-}
-// Function to handle going to the previous page
-function goToPreviousPage() {
-    if (currentPage > 1) {
-        currentPage--;
-        loadFileList(currentPage);
-    }
-}
-
-
+// Bind the "Load File" button click event
+document.getElementById('load-btn').addEventListener('click', function() {
+    document.getElementById('file-input').click();
+});
 
 
 // Function to execute Python code from the editor
@@ -192,7 +181,6 @@ function executePythonCode(code) {
             console.error('Execution error:', error);
         });
 }
-
 
 // Saves the current code to a file on the server.
 // It takes the code and filePath as parameters and sends them to the '/save-file' endpoint.
@@ -230,10 +218,6 @@ document.getElementById('save-btn').addEventListener('click', function() {
     saveFile(code, fileName);
 });
 
-
-
-// Toggles comment state for the selected range in the editor.
-// Checks if the editor instance has necessary methods before performing the action.
 
 // Function to toggle comment state for the selected range in the editor
 function toggleComment() {
@@ -291,28 +275,25 @@ function extractFunctionNames(code) {
     });
 }
 
-    function openFileOrFolder(path) {
-        fetch(`/open-file-or-folder?path=${encodeURIComponent(path)}`)
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    if (data.type === 'file') {
-                        // It's a file, load its content into the editor
-                        editor.setValue(data.content);
-                    } else if (data.type === 'folder') {
-                        // It's a folder, update the file explorer with its contents
-                        updateFileExplorer(data.contents);
-                    } else {
-                        console.error('Unknown type:', data.type);
-                    }
-                } else {
-                    console.error('Open file/folder error:', data.message);
-                }
-            })
-            .catch(error => {
-                console.error('Open file/folder error:', error);
-            });
+document.getElementById('file-input').addEventListener('change', function(event) {
+    const file = event.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+
+        reader.onload = function(e) {
+            const contents = e.target.result;
+
+            // Assuming 'editor' is your CodeMirror instance
+            editor.setValue(contents);
+        };
+
+        reader.readAsText(file);
     }
+});
+
+
+
+    
     function updateFileExplorer(contents) {
         
         
@@ -360,45 +341,278 @@ function attachEditorEventListeners() {
     }
 }
 
+var customKeyMap = {
+    "Ctrl-F": function(editor) {
+        // Logic for Ctrl+F / Cmd+F
+        triggerSearch(editor);
+    },
+    "Ctrl-H": function(editor) {
+        // Logic for Ctrl+H / Cmd+H
+        triggerReplace(editor);
+    },
+
+    "Ctrl-/": function(editor) {
+        // Logic for Ctrl+/ / Cmd+/
+        toggleComment(editor);
+
+        
+    },
+
+    
+    "Ctrl-G": function(editor) {
+        // Logic for Ctrl+/ / Cmd+/
+        goToLine(editor);
+    },
+
+    "Cmd-G": function(editor) {
+        // Logic for Ctrl+/ / Cmd+/
+        goToLine(editor);
+    },
+
+    "Cmd-/": function(editor) {
+        // Logic for Ctrl+/ / Cmd+/
+        toggleComment(editor);
+    },
+    "Cmd-F": function(editor) { // For Mac users
+        triggerSearch(editor);
+    },
+    "Cmd-H": function(editor) { // For Mac users
+        triggerReplace(editor);
+    },
+    "Ctrl-Enter": function(editor) {
+        executePythonCode(editor.getValue());
+    },
+    "Cmd-Enter": function(editor) { // For Mac users
+        executePythonCode(editor.getValue());
+    },
+    "Ctrl-S": function(editor) {
+        saveFile(editor.getValue(), 'filename.py'); // Replace 'filename.py' with your logic for file names
+    },
+    "Cmd-S": function(editor) { // For Mac users
+        saveFile(editor.getValue(), 'filename.py');
+    },
+    "Ctrl-Shift-L": function(editor) {
+        // Logic to trigger the load file functionality
+        // This might require additional UI for the user to input a file path
+        openFile(); // You need to define how to get the file path
+    },
+    "Cmd-O": function(editor) { // For Mac users
+        openFile();
+
+        
+    }
+};
+
+// Define the go to line function
+function goToLine(editor) {
+    // Remove any existing line input
+    var existingInput = document.getElementById('go-to-line-input');
+    if (existingInput) {
+        existingInput.remove();
+    }
+
+    // Create an input field for the line number
+    var input = document.createElement("input");
+    input.id = 'go-to-line-input';
+    input.type = "text";
+    input.style.position = "absolute";
+    input.style.zIndex = "10";
+    input.style.left = "50%";
+    input.style.top = "40%";
+    input.style.transform = "translate(-50%, -50%)";
+    input.style.fontSize = "1.2em";
+    input.style.padding = "5px";
+    input.style.width = "200px";
+    input.style.textAlign = "center";
+    input.style.border = "1px solid #888";
+    input.style.borderRadius = "4px";
+    input.style.boxShadow = "0px 4px 5px rgba(0,0,0,0.2)";
+    input.style.backgroundColor = "#fff";
+    input.placeholder = "Go to line...";
+    input.setAttribute("aria-label", "Go to line number");
+
+    // Function to handle the "Enter" key in the input field
+    input.onkeydown = function(e) {
+        if (e.key === "Enter") {
+            e.preventDefault();
+            var lineNum = parseInt(this.value, 10);
+            if (!isNaN(lineNum) && lineNum > 0) {
+                editor.setCursor(lineNum - 1);
+                editor.focus();
+                this.remove();
+            } else {
+                alert("Please enter a valid line number.");
+            }
+        }
+    };
+
+    // Add the input to the DOM and focus it
+    document.body.appendChild(input);
+    input.focus();
+
+    // Function to remove the input field when it loses focus
+    input.onblur = function() {
+        this.remove();
+    };
+}
+
+function triggerSearch(editor) {
+    // Logic to open the search box or focus on it
+    document.getElementById('search-box').focus();
+}
+
+function triggerReplace(editor) {
+    // Logic to open the replace box or focus on it
+    document.getElementById('replace-box').focus();
+}
+
 document.addEventListener('DOMContentLoaded', function () {
 
-    // Initialize CodeMirror editor
-    editor = CodeMirror.fromTextArea(document.getElementById("code-editor"), {
-        lineNumbers: true,
-        mode: "python",
-        theme: "monokai",
-        autoCloseBrackets: true, // Auto bracketing
-        matchBrackets: true,
-        foldGutter: true,       // Code folding/gutter
-        gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter"],
-        smartIndent: true,
-        lint: true,
-        indentUnit: 4,
-        lintMode: "python",
-        fullScreen: false,
-        viewportMargin: Infinity,
-        styleActiveLine: true,
-        placeholder: "Write your Python code here",
-        hintOptions: {
-            hint: (cm, options) => {
-                const cursor = cm.getCursor(); // Gets the cursor position
-                const token = cm.getTokenAt(cursor); // Gets the token at the cursor position
-                const start = token.start;
-                const end = cursor.ch; // End of the current word
+// Initialize CodeMirror editor
+editor = CodeMirror.fromTextArea(document.getElementById("code-editor"), {
+    lineNumbers: true,
+    mode: "python", // Specify the mode for syntax highlighting (Python in this case)
+    theme: "Solarized Light",
+    autoCloseBrackets: true,
+    matchBrackets: true,
+    foldGutter: true,
+    gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter", "CodeMirror-lint-markers"],
+    smartIndent: true,
+    indentUnit: 4,
+    fullScreen: false,
+    viewportMargin: Infinity,
+    styleActiveLine: true,
+    placeholder: "Write your Python code here",
+    hintOptions: {
+        hint: (cm, options) => {
+            const cursor = cm.getCursor(); // Gets the cursor position
+            const token = cm.getTokenAt(cursor); // Gets the token at the cursor position
+            const start = token.start;
+            const end = cursor.ch; // End of the current word
 
-                // Filter the autocomplete words that start with the token string
-                const matchedWords = autocompleteWords.filter(word => word.startsWith(token.string));
+            // Filter the autocomplete words that start with the token string
+            const matchedWords = autocompleteWords.filter(word => word.startsWith(token.string));
 
-                return {
-                    list: matchedWords,
-                    from: CodeMirror.Pos(cursor.line, start),
-                    to: CodeMirror.Pos(cursor.line, end),
-                };
-
-            },
-            completeSingle: false, // Enable autocomplete while typing
+            return {
+                list: matchedWords,
+                from: CodeMirror.Pos(cursor.line, start),
+                to: CodeMirror.Pos(cursor.line, end),
+            };
         },
-    });
+    },
+    lint: {
+        // Specify the linting function here
+        getAnnotations: (code) => {
+            // Call your lintPythonCode function to get linting results
+            const lintingResults = lintPythonCode(code);
+            
+            // Transform linting results to CodeMirror annotations format
+            return lintingResults.map((result) => ({
+                from: CodeMirror.Pos(result.row - 1, result.column),
+                to: CodeMirror.Pos(result.row - 1, result.column), // Add positions to highlight specific characters
+                message: result.message,
+                severity: result.type === 'error' ? 'error' : 'warning',
+            }));
+        },
+    },
+});
+
+
+    
+
+        // Add the custom key map to the editor
+        editor.addKeyMap(customKeyMap);
+
+    
+    function findNext(editor, term) {
+        if (!term) return; // No search term provided
+        if (term !== lastSearchTerm) {
+            // New search term, reset cursor
+            searchCursor = editor.getSearchCursor(term);
+            lastSearchTerm = term;
+        }
+        if (searchCursor.findNext()) {
+            editor.setSelection(searchCursor.from(), searchCursor.to());
+        } else {
+            // Restart from the top
+            searchCursor = editor.getSearchCursor(term);
+            if (searchCursor.findNext()) {
+                editor.setSelection(searchCursor.from(), searchCursor.to());
+            }
+        }
+    }
+    
+
+    function replaceNext(editor, term, replacement) {
+        if (!searchCursor || !term) return; // Ensure active search and term is provided
+    
+        if (searchCursor.from() && searchCursor.to()) {
+            editor.replaceRange(replacement, searchCursor.from(), searchCursor.to());
+            findNext(editor, term); // Move to next match after replacement
+        } else {
+            // If no active cursor or the term is not found, initialize search
+            findNext(editor, term);
+        }
+    }
+    
+
+    function replaceAll(editor, term, replacement) {
+        if (!term) return; // No search term provided
+    
+        let cursor = editor.getSearchCursor(term);
+        while (cursor.findNext()) {
+            editor.replaceRange(replacement, cursor.from(), cursor.to());
+            // Reinitialize cursor after each replacement to continue the search
+            cursor = editor.getSearchCursor(term, cursor.to());
+        }
+    }
+    
+
+document.getElementById('find-next-btn').addEventListener('click', () => {
+    const searchTerm = document.getElementById('search-box').value;
+    findNext(editor, searchTerm);
+});
+
+document.getElementById('replace-next-btn').addEventListener('click', () => {
+    const searchTerm = document.getElementById('search-box').value;
+    const replacement = document.getElementById('replace-box').value;
+    replaceNext(editor, searchTerm, replacement);
+});
+
+document.getElementById('replace-all-btn').addEventListener('click', () => {
+    const searchTerm = document.getElementById('search-box').value;
+    const replacement = document.getElementById('replace-box').value;
+    replaceAll(editor, searchTerm, replacement);
+});
+
+document.getElementById('search-btn').addEventListener('click', () => {
+    const searchTerm = document.getElementById('search-box').value;
+    if (searchTerm) {
+        findNext(editor, searchTerm);
+    }
+});
+
+document.getElementById('search-box').addEventListener('keypress', function(event) {
+    if (event.key === 'Enter') {
+        event.preventDefault(); // Prevent the default action
+        const searchTerm = this.value;
+        if (searchTerm) {
+            findNext(editor, searchTerm);
+        }
+    }
+});
+
+document.getElementById('replace-box').addEventListener('keypress', function(event) {
+    if (event.key === 'Enter') {
+        event.preventDefault(); // Prevent the default action
+        const searchTerm = document.getElementById('search-box').value;
+        const replacement = this.value;
+        if (searchTerm && replacement) {
+            replaceNext(editor, searchTerm, replacement);
+        }
+    }
+});
+
 
     // Call the function to attach event listeners
     attachEditorEventListeners();
@@ -417,29 +631,9 @@ document.addEventListener('DOMContentLoaded', function () {
         }, 500);
     });
 
-    // Add event listener for linting
-    document.getElementById('lint-btn').addEventListener('click', function () {
-        const lintResults = lintPythonCode(editor.getValue());
-        displayLintResults(lintResults);
-    });
 
-    function displayLintResults(lintResults) {
-        const resultsContainer = document.getElementById('lint-results');
-        resultsContainer.innerHTML = ''; // Clear previous results
 
-        if (lintResults.length === 0) {
-            resultsContainer.innerHTML = '<p>No linting errors or warnings found.</p>';
-            return;
-        }
-
-        lintResults.forEach(result => {
-            const resultItem = document.createElement('div');
-            resultItem.className = 'lint-result-item';
-            resultItem.classList.add(result.type === 'error' ? 'lint-error' : 'lint-warning');
-            resultItem.textContent = `${result.type.toUpperCase()}: Line ${result.line}: ${result.message}`;
-            resultsContainer.appendChild(resultItem);
-        });
-    }
+   
 
     // Existing autocomplete function
     CodeMirror.commands.autocomplete = function (cm) {
@@ -616,29 +810,6 @@ function updateContextualSnippets() {
     });
 }
 
-    // Event listener for loading a file
-    document.getElementById('file-input').addEventListener('change', function (event) {
-        const file = event.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = function (e) {
-                editor.setValue(e.target.result);
-            };
-            reader.readAsText(file);
-        }
-    });
-
-document.getElementById('file-input').addEventListener('change', function(event) {
-    const file = event.target.files[0];
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            // Assuming 'editor' is the variable for your code editor instance
-            editor.setValue(e.target.result);
-        };
-        reader.readAsText(file);
-    }
-});
 
 const functionDetails = {
     'lint_python': 'Lints Python code to check for errors.',
@@ -658,123 +829,178 @@ document.querySelectorAll('#function-list li').forEach(function(item) {
     });
 });
 
-function lintPythonCode(code) {
-    const lintingResults = [];
 
-    // Check for lines longer than 79 characters (PEP 8 recommendation)
-    const lines = code.split('\n');
-    for (let i = 0; i < lines.length; i++) {
-        const line = lines[i];
-        if (line.length > 79) {
-            lintingResults.push({
-                message: `Line ${i + 1} exceeds 79 characters (PEP 8 recommendation).`,
-                type: 'warning',
-                row: i + 1,
-                column: 80, // Suggested column limit
-            });
-        }
-    }
 
-    // Check for trailing whitespace
-    for (let i = 0; i < lines.length; i++) {
-        if (/\s+$/.test(lines[i])) {
-            lintingResults.push({
-                message: `Trailing whitespace found on line ${i + 1}.`,
-                type: 'warning',
-                row: i + 1,
-                column: lines[i].length,
-            });
-        }
-    }
-
-    // Check for missing docstrings for functions and classes
-    const functionPattern = /def\s+(\w+)\s*\(/g;
-    const classPattern = /class\s+(\w+)\s*:/g;
     
-    const functionMatches = code.match(functionPattern) || [];
-    const classMatches = code.match(classPattern) || [];
-    
-    functionMatches.forEach((match, index) => {
-        if (!/""".*?"""/s.test(match)) {
-            // Docstring not found for function
-            lintingResults.push({
-                message: `Missing docstring for function ${match.split(' ')[1]} on line ${functionMatches.index + index + 1}.`,
-                type: 'warning',
-                row: functionMatches.index + index + 1,
-                column: 0,
-            });
-        }
-    });
-    
-    classMatches.forEach((match, index) => {
-        if (!/""".*?"""/s.test(match)) {
-            // Docstring not found for class
-            lintingResults.push({
-                message: `Missing docstring for class ${match.split(' ')[1]} on line ${classMatches.index + index + 1}.`,
-                type: 'warning',
-                row: classMatches.index + index + 1,
-                column: 0,
-            });
-        }
-    });
-
-    // Check for incorrect indentation
-    const indentationStack = [];
-   
-    for (let i = 0; i < lines.length; i++) {
-        const line = lines[i];
-        const indentationLevel = line.search(/\S/); // Find the first non-whitespace character's position
-   
-        if (indentationStack.length > 0) {
-            const expectedIndentation = indentationStack[indentationStack.length - 1];
-   
-            if (indentationLevel !== expectedIndentation) {
-                lintingResults.push({
-                    message: `Incorrect indentation on line ${i + 1}. Expected ${expectedIndentation} spaces, found ${indentationLevel}.`,
-                    type: 'error',
-                    row: i + 1,
-                    column: indentationLevel,
-                });
-            }
-        }
-   
-        // Update the stack with the new indentation level
-        indentationStack.push(indentationLevel);
-    }
-
-    // Check for unused variables
-    const variablePattern = /\b(\w+)\s*=/g;
-    const declaredVariables = new Set();
-   
-    let match;
-    while ((match = variablePattern.exec(code))) {
-        declaredVariables.add(match[1]);
-    }
-   
-    // Analyze the code to find variable usages and mark unused variables
-    declaredVariables.forEach((variable) => {
-        const usagePattern = new RegExp(`\\b${variable}\\b`, 'g');
-        const usages = code.match(usagePattern);
-   
-        if (usages && usages.length === 1) {
-            // Only one usage (the declaration itself), consider it unused
-            lintingResults.push({
-                message: `Unused variable: ${variable}.`,
-                type: 'warning',
-                row: code.substring(0, usages.index).split('\n').length,
-                column: usages.index,
-            });
-        }
-    });
-
-    return lintingResults;
-}
 
 
     // Event listener for the home button
     document.getElementById('home-btn').addEventListener('click', function () {
         location.reload();
     });
+
+    // Function to create a new document
+function createNewDocument() {
+    // Clear the editor content
+    editor.setValue("");
+
+    // Update the active filename to indicate it's a new untitled document
+    document.getElementById("active-filename").textContent = "Active File: Untitled";
+}
+
+// Event listener for the "New File" button
+document.getElementById("new-file-btn").addEventListener("click", createNewDocument);
+
+// Function to change the editor's theme
+function changeTheme(editor, theme) {
+    editor.setOption("theme", theme);
+}
+
+// Event listener for the theme selector
+document.getElementById('theme-selector').addEventListener('change', function() {
+    changeTheme(editor, this.value);
+});
+
+
+function lintPythonCode(code) {
+    const lintingResults = [];
+
+    // Check for lines longer than 79 characters (PEP 8 recommendation)
+    if (typeof code === 'string') {
+        const lines = code.split('\n');
+        // Rest of your code
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
+            if (line.length > 79) {
+                lintingResults.push({
+                    message: `Line ${i + 1} exceeds 79 characters (PEP 8 recommendation).`,
+                    type: 'warning',
+                    row: i + 1,
+                    column: 80, // Suggested column limit
+                });
+            }
+        }
+
+        // Check for trailing whitespace
+        for (let i = 0; i < lines.length; i++) {
+            if (/\s+$/.test(lines[i])) {
+                lintingResults.push({
+                    message: `Trailing whitespace found on line ${i + 1}.`,
+                    type: 'warning',
+                    row: i + 1,
+                    column: lines[i].length,
+                });
+            }
+        }
+
+        // Check for missing docstrings for functions and classes
+        const functionPattern = /def\s+(\w+)\s*\(/g;
+        const classPattern = /class\s+(\w+)\s*:/g;
+
+        const functionMatches = code.match(functionPattern) || [];
+        const classMatches = code.match(classPattern) || [];
+
+        functionMatches.forEach((match, index) => {
+            if (!/""".*?"""/s.test(match)) {
+                // Docstring not found for function
+                lintingResults.push({
+                    message: `Missing docstring for function ${match.split(' ')[1]} on line ${functionMatches.index + index + 1}.`,
+                    type: 'warning',
+                    row: functionMatches.index + index + 1,
+                    column: 0,
+                });
+            }
+        });
+
+        classMatches.forEach((match, index) => {
+            if (!/""".*?"""/s.test(match)) {
+                // Docstring not found for class
+                lintingResults.push({
+                    message: `Missing docstring for class ${match.split(' ')[1]} on line ${classMatches.index + index + 1}.`,
+                    type: 'warning',
+                    row: classMatches.index + index + 1,
+                    column: 0,
+                });
+            }
+        });
+
+        // Check for incorrect indentation
+        const indentationStack = [];
+
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
+            const indentationLevel = line.search(/\S/); // Find the first non-whitespace character's position
+
+            if (indentationStack.length > 0) {
+                const expectedIndentation = indentationStack[indentationStack.length - 1];
+
+                if (indentationLevel !== expectedIndentation) {
+                    lintingResults.push({
+                        message: `Incorrect indentation on line ${i + 1}. Expected ${expectedIndentation} spaces, found ${indentationLevel}.`,
+                        type: 'error',
+                        row: i + 1,
+                        column: indentationLevel,
+                    });
+                }
+            }
+
+            // Update the stack with the new indentation level
+            indentationStack.push(indentationLevel);
+        }
+
+        // Check for unused variables
+        const variablePattern = /\b(\w+)\s*=/g;
+        const declaredVariables = new Set();
+
+        let match;
+        while ((match = variablePattern.exec(code))) {
+            declaredVariables.add(match[1]);
+        }
+
+        // Analyze the code to find variable usages and mark unused variables
+        declaredVariables.forEach((variable) => {
+            const usagePattern = new RegExp(`\\b${variable}\\b`, 'g');
+            const usages = code.match(usagePattern);
+
+            if (usages && usages.length === 1) {
+                // Only one usage (the declaration itself), consider it unused
+                lintingResults.push({
+                    message: `Unused variable: ${variable}.`,
+                    type: 'warning',
+                    row: code.substring(0, usages.index).split('\n').length,
+                    column: usages.index,
+                });
+            }
+        });
+    } else {
+        console.error('Invalid code: not a string');
+
+        
+    }
+
+    return lintingResults;
+}
+
+
+
+
+// Assuming that 'editor' is defined outside this code block
+
+document.getElementById('lint-btn').addEventListener('click', function () {
+    const lintResults = lintPythonCode(editor.getValue());
+    displayLintResults(lintResults);
+});
+
+function displayLintResults(lintResults) {
+    if (lintResults.length === 0) {
+        console.log('No linting errors or warnings found.');
+    } else {
+        lintResults.forEach(result => {
+            console.log(`${result.type.toUpperCase()}: Line ${result.row}: ${result.message}`);
+        });
+    }
+}
+
 
 
     document.addEventListener('DOMContentLoaded', initializeApp);
