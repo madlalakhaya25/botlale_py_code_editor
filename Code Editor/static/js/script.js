@@ -4,6 +4,8 @@ let currentPage = 1; // first page
 const perPage = 10; 
 let lastSearchTerm = null;
 let searchCursor = null;
+let lintingEnabled = false; // Initialize linting as enabled by default
+
 
 
 // Function to parse and display functions
@@ -358,7 +360,11 @@ var customKeyMap = {
         
     },
 
-    
+    "Ctrl-I": function (editor) {
+        // Toggle linting state
+        toggleLinting(editor); // Call the toggleLinting function
+    },
+
     "Ctrl-G": function(editor) {
         // Logic for Ctrl+/ / Cmd+/
         goToLine(editor);
@@ -863,6 +869,10 @@ document.getElementById('theme-selector').addEventListener('change', function() 
 
 
 function lintPythonCode(code) {
+    if (!lintingEnabled) {
+        return []; // Return an empty array if linting is disabled
+    }
+    
     const lintingResults = [];
 
     // Check for lines longer than 79 characters (PEP 8 recommendation)
@@ -981,15 +991,42 @@ function lintPythonCode(code) {
     return lintingResults;
 }
 
+// Function to toggle linting when the lint button is clicked
 
+    // Event listener for the "Lint" button
+    const lintButton = document.getElementById('lint-btn');
+    lintButton.addEventListener('click', toggleLinting);
 
-
-// Assuming that 'editor' is defined outside this code block
-
-document.getElementById('lint-btn').addEventListener('click', function () {
-    const lintResults = lintPythonCode(editor.getValue());
-    displayLintResults(lintResults);
+// Function to toggle linting using the keyboard shortcut
+document.addEventListener('keydown', function (event) {
+    // Check for the Ctrl+I (Cmd+I for Mac) key combination
+    if ((event.ctrlKey || event.metaKey) && event.key === 'I' ) {
+        event.preventDefault(); // Prevent the default behavior of the key combination
+        lintButton.click(); // Programmatically click the "Lint" button
+    }
 });
+function toggleLinting() {
+    lintingEnabled = !lintingEnabled; // Toggle linting state
+    lintCode(editor); // Call the linting function
+    // Update the lint button text to reflect the linting state
+    const lintButton = document.getElementById('lint-btn');
+    lintButton.textContent = lintingEnabled ? 'Lint On' : 'Lint Off';
+
+    // Focus on the editor after toggling linting
+    editor.focus();
+}
+
+// Custom linting function that checks the lintingEnabled flag
+function lintCode(editor) {
+    if (lintingEnabled) {
+        const code = editor.getValue();
+        const lintResults = lintPythonCode(code);
+        displayLintResults(lintResults);
+    } else {
+        // Clear linting annotations if linting is disabled
+        editor.clearGutter('CodeMirror-lint-markers');
+    }
+}
 
 function displayLintResults(lintResults) {
     if (lintResults.length === 0) {
@@ -1000,6 +1037,8 @@ function displayLintResults(lintResults) {
         });
     }
 }
+
+
 
 
 
