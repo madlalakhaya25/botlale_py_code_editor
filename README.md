@@ -27,6 +27,7 @@ Enhance your coding efficiency with these handy keyboard shortcuts:
 •	Save File: Ctrl + S (Windows/Linux), Cmd + S (Mac)
 •	Load File: Ctrl + O (Windows/Linux), Cmd + O (Mac)
 •	Toggle Comment: Ctrl + / (Windows/Linux), Cmd + / (Mac)
+•	Toggle Lint: Ctrl + I (Windows/Linux), Cmd + / (Mac)
 •	Find: Ctrl + F (Windows/Linux), Cmd + F (Mac)
 •	Replace: Ctrl + H (Windows/Linux), Cmd + H (Mac)
 •	Go to Line: Ctrl + G (Windows/Linux), Cmd + G (Mac)

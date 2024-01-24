@@ -48,31 +48,36 @@
 
     <nav>
         <div class="nav-group">
-            <button id="home-btn"><i class="fas fa-home"></i> Home</button>
-            <button id="new-file-btn"><i class="fas fa-file"></i> New File</button>
-            <button id="load-btn"><i class="fas fa-folder-open"></i> Load File</button>
+            <button id="home-btn"title="Home"><i class="fas fa-home"></i></button>
+            <button id="new-file-btn" title="New File"><i class="fas fa-file"></i></button>
+            <button id="load-btn" title="Load File"><i class="fas fa-folder-open"></i></button>
             <input type="file" id="file-input" style="display: none;" />
-            <button id="save-btn"><i class="fas fa-save"></i> Save to Disk</button>
-            
+            <button id="save-btn" title="Save to Disk"><i class="fas fa-save"></i></button>
         </div>
 
 
         <div class="nav-group">
-            <button id="run-code-btn"><i class="fas fa-play"></i> Run</button>
-            <button id="toggle-comment-btn"><i class="fas fa-comments"></i> Toggle Comment</button>
-            <button id="lint-btn"><i class="fas fa-circle"></i> Lint</button>
-
+            <button id="run-code-btn" title="Run"><i class="fas fa-play"></i></button>
+            <button id="toggle-comment-btn" title=" Toggle Comment"><i class="fas fa-comments"></i></button>
+            <label class="switch" title="Lint Switch">
+            <input type="checkbox" id="lint-switch" aria-label="Lint Switch">
+            <span class="slider round"></span>
+            </label>
+        </div>
+        
+        <div>
+            <input id="search-box" type="text" placeholder="Search term">
+            <button id="search-btn" title="Search"><i class="fas fa-search"></i></button>
+            <button id="find-next-btn" title="Find Next"><i class="fas fa-search-plus"></i></button>
+        </div>
+        
+        <div>
+            <input id="replace-box" type="text" placeholder="Replace with">
+            <button id="replace-next-btn" title="Replace Next"><i class="fas fa-exchange-alt"></i></button>
+            <button id="replace-all-btn" title="Replace All"><i class="fas fa-retweet"></i></button>
         </div>
 
-        <input id="search-box" type="text" placeholder="Search term">
-        <button id="search-btn">Search</button>
-        <button id="find-next-btn">Find Next</button>
-        
-<input id="replace-box" type="text" placeholder="Replace with">
-<button id="replace-next-btn">Replace Next</button>
-<button id="replace-all-btn">Replace All</button>
-
-    </nav>
+        </nav>
     
 
     <div id="file-explorer">
@@ -113,13 +118,6 @@
                 </ul>
             </div>
 
-
-            <div id="lint-results" class="lint-results-container"></div>
-
-            <button id="feedback-btn">Provide Feedback</button>
-
-
-            
         </section>
     </div>
 

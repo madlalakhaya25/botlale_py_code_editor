@@ -1,61 +1,70 @@
-/* Base reset */
+/* Base reset for all elements */
 * {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
 }
 
+/* Set default styles for the entire document */
 body, html {
     height: 100%;
     margin: 0;
     font-family: 'Arial', sans-serif;
-    background-color: #f0f0f0; /* Adjust the color as needed */
+    background-color: #f0f0f0;
 }
 
-/* Navigation styling */
+/* Navigation bar styling */
 nav {
     display: flex;
     justify-content: space-between;
     padding: 10px;
     background: #333;
+    color: white;
 }
 
 .nav-group {
     display: flex;
     align-items: center;
+    margin-right: 20px;
 }
 
-nav ul {
-    list-style-type: none;
-    text-align: center;
-}
-
-nav ul li {
-    display: inline;
-    margin: 0 20px;
-}
-
+/* Style buttons consistently */
 nav button {
-    display: flex;
-    align-items: center;
-    margin-right: 10px; /* Adjust as needed */
-    padding: 8px 12px;
     background-color: #4CAF50;
-    color: white;
     border: none;
     border-radius: 4px;
     cursor: pointer;
+    padding: 8px 10px;
+    margin-right: 10px;
     transition: background-color 0.3s ease;
+    color: white;
 }
 
-/* Ensure the last button doesn't have a margin to the right */
-nav button:last-child {
+/* Remove margin for the last button in a group */
+.nav-group button:last-child {
     margin-right: 0;
 }
 
-/* Icon styling */
-nav button i {
-    margin-right: 5px; /* Space between icon and text */
+/* Adjust the size of the input fields */
+nav input[type="text"] {
+    padding: 8px;
+    margin-right: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+/* Align items for the div containing search-related elements */
+div > input,
+div > button {
+    display: inline-block;
+    vertical-align: middle;
+}
+
+/* Ensure the divs are not spaced apart */
+nav > div {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
 }
 
 /* Hover effect for buttons */
@@ -63,7 +72,7 @@ nav button:hover {
     background-color: #45a049;
 }
 
-/* Inside style.css */
+/* Header section of the code editor */
 #code-editor-header {
     text-align: center;
     background-color: #4CAF50;
@@ -78,26 +87,28 @@ nav button:hover {
     font-size: 20px;
 }
 
+/* File explorer panel */
 #file-explorer {
     width: 200px;
     border-right: 1px solid #ccc;
     height: 100vh;
     overflow-y: auto;
+    background-color: #f5f5f5;
+    padding: 10px;
 }
 
 /* Main container and sections */
 #container {
     display: flex;
     justify-content: space-around;
-    float: middle;
-    width: calc(100% - 200px); /* Adjust the width based on the file explorer width */
+    width: calc(100% - 200px);
     margin: 20px auto;
     max-width: 1200px;
-    border: 1px solid #ccc; /* Add a border to the main container */
-    border-radius: 8px; /* Add rounded corners to the main container */
-    padding: 20px; /* Add padding for spacing */
-    background-color: #fff; /* Add a background color */
-    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1); /* Add a subtle shadow */
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: 20px;
+    background-color: #fff;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 #main {
@@ -106,13 +117,14 @@ nav button:hover {
     width: 100%;
 }
 
+/* Code editor and output containers */
 #editor-container, #output-container {
     margin-bottom: 20px;
-    border: 1px solid #ccc; /* Add a border to the containers */
-    border-radius: 4px; /* Add rounded corners to the containers */
-    padding: 20px; /* Add padding for spacing */
-    background-color: #fff; /* Add a background color */
-    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1); /* Add a subtle shadow */
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 20px;
+    background-color: #fff;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 /* Code editor styling */
@@ -140,7 +152,7 @@ nav button:hover {
     white-space: pre-wrap;
 }
 
-/* Responsive design */
+/* Responsive design for smaller screens */
 @media (max-width: 768px) {
     #container {
         flex-direction: column;
@@ -164,7 +176,7 @@ nav button:hover {
 /* File explorer container */
 #file-explorer {
     float: left;
-    width: 200px; /* Adjust the width as needed */
+    width: 200px;
     border-right: 1px solid #ccc;
     height: 100%;
     overflow-y: auto;
@@ -176,7 +188,7 @@ nav button:hover {
 #file-explorer h3 {
     font-size: 18px;
     margin-bottom: 10px;
-    color: #333; /* Header text color */
+    color: #333;
 }
 
 /* File list styling */
@@ -191,216 +203,74 @@ nav button:hover {
     cursor: pointer;
     color: #666;
     transition: color 0.3s ease;
-    padding-left: 10px; /* Adjust the padding-left value to control the indentation */
+    padding-left: 10px;
 }
 
 #file-list li.selected {
-    background-color: #4CAF50; /* Adjust the background color as needed */
-    color: white; /* Text color for the selected file */
-    font-weight: bold; /* Make the text bold for emphasis */
+    background-color: #4CAF50;
+    color: white;
+    font-weight: bold;
 }
 
 #file-list li:hover {
-    color: #333; /* Change text color on hover */
+    color: #333;
 }
 
-/* Scrollbar styling (if needed) */
-#file-explorer::-webkit-scrollbar {
-    width: 8px;
-}
-
-#file-explorer::-webkit-scrollbar-thumb {
-    background-color: #ccc; /* Scrollbar thumb color */
-    border-radius: 4px;
-}
-
-#file-explorer::-webkit-scrollbar-thumb:hover {
-    background-color: #999; /* Scrollbar thumb color on hover */
-}
-
-/* Function List */
-#function-nav {
-    background-color: #333; /* Background color for the navigation container */
-    color: white; /* Text color for the navigation container */
-    padding: 10px; /* Padding around the navigation container */
-}
-
-#function-list {
-    display: flex; /* Display list items in a row */
-    list-style-type: none; /* Remove default list item bullets */
-    padding: 0; /* Remove default padding */
-    margin: 0; /* Remove default margin */
-    overflow-x: auto; /* Enables horizontal scrolling if items overflow */
-    white-space: nowrap; /* Prevents wrapping of items to ensure horizontal layout */
-    gap: 10px; /* Add space between list items */
-}
-
-#feedback-btn {
-    margin-top: 20px; /* Add margin at the top */
-}
-
-/* CodeMirror Dialog Styles */
-.CodeMirror-dialog {
-    position: absolute; /* or fixed depending on your layout */
-    top: 50px; /* Adjust as necessary to bring into view */
-    left: 50%; /* Center the dialog */
-    transform: translateX(-50%); /* Center align */
-    display: block !important; /* Ensure it is not set to 'none' */
-    z-index: 9999 !important; /* Use a high value to ensure it's on top */
-    padding: 8px !important; /* Space inside the dialog */
-    border-radius: 4px !important; /* Rounded corners */
-    border: 1px solid #ccc !important; /* Border for visibility */
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important; /* Drop shadow for depth */
-}
-
-/* Input field style for CodeMirror dialog */
-.CodeMirror-dialog input.CodeMirror-search-field {
-    width: auto; /* Let it take the necessary width */
-    padding: 4px 8px; /* Padding for aesthetics */
-    font-size: 1em; /* Larger font size for readability */
-    margin-right: 10px; /* Add some space between the input and hint */
-    border: 2px solid #888; /* A more visible border */
-    box-shadow: inset 0 1px 3px rgba(0,0,0,0.2); /* Inner shadow for depth */
-}
-
-/* Hint text style for CodeMirror dialog */
-.CodeMirror-dialog .CodeMirror-search-hint {
-    color: #888; /* Less prominent color */
-    font-size: 0.85em; /* Smaller than the input text */
-}
-
-/* Header Logo */
-#code-editor-header img {
-    height: 50px; /* Set the height of your logo */
-    vertical-align: middle;
-    margin-right: 20px;
-}
-
-/* Function Info */
-#function-info {
-    display: flex;
-    border: 1px solid #ddd;
-    padding: 10px;
-    margin-top: 10px;
-    background-color: #f9f9f9;
-}
-
-/* Style for the dropdown menu */
+/* Dropdown menu styles */
 #snippet-dropdown {
     display: block;
-    width: 100%; /* Make the dropdown full width of its container */
-    padding: 8px; /* Add some padding inside the dropdown */
-    margin-bottom: 10px; /* Add some space below the dropdown */
-    border-radius: 4px; /* Rounded corners for the dropdown */
-    border: 1px solid #ccc; /* Border color similar to other elements */
-    background-color: white; /* Background color for the dropdown */
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
-    font-size: 1em; /* Font size similar to other input elements */
-    color: #333; /* Text color for the options */
-    cursor: pointer; /* Change cursor to indicate it's selectable */
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 10px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    background-color: white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    font-size: 1em;
+    color: #333;
+    cursor: pointer;
 }
 
-/* Style the option elements just in case you want a specific style for them */
+/* Style for individual option elements */
 #snippet-dropdown option {
-    padding: 8px; /* Padding for each option */
-    background-color: white; /* Background for options */
-    color: #333; /* Text color for options */
+    padding: 8px;
+    background-color: white;
+    color: #333;
 }
 
-/* Style for the li elements */
+/* Styling for function list */
 #function-list li {
-    display: inline-block; /* Make each li an inline block for horizontal layout */
-    padding: 5px 10px; /* Add padding for visual space around the text */
-    margin-right: 10px; /* Add margin to the right for spacing between items */
-    background-color: #4CAF50; /* Background color */
-    color: white; /* Text color */
-    border: 1px solid #ccc; /* Border for each list item */
-    border-radius: 4px; /* Rounded corners for each list item */
-    cursor: pointer; /* Change cursor to indicate clickable items */
-    transition: background-color 0.3s; /* Smooth transition for hover effect */
+    display: inline-block;
+    padding: 5px 10px;
+    margin-right: 10px;
+    background-color: #4CAF50;
+    color: white;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s;
 }
 
 #function-list li:hover {
-    background-color: #777; /* Background color when hovering over function names */
+    background-color: #777;
 }
 
-
-
+/* Highlighted line style (for code editor) */
 .highlight-line {
-    background-color: yellow; /* Or any color you prefer */
+    background-color: yellow;
 }
 
-/* CSS for file tabs container */
-#file-tabs-container {
-    background-color: #f5f5f5;
-    border-bottom: 1px solid #ccc;
-    padding: 5px 0;
-  }
-  
-  /* CSS for file tabs */
-  #file-tabs {
-    display: flex;
-    align-items: center;
-    overflow-x: auto;
-    padding: 0 10px;
-  }
-  
-  .file-tab {
-    border: 1px solid #ccc;
-    padding: 5px 10px;
-    margin-right: 5px;
-    cursor: pointer;
-  }
-  
-  .file-tab.active-file-tab {
-    background-color: #0074d9;
-    color: #fff;
-  }
-  
-  .close-tab-button {
-    margin-left: 5px;
-    cursor: pointer;
-  }
-  
-  /* CSS for editor and output container */
-  #editor-output-container {
+/* Styles for editor and output container */
+#editor-output-container {
     display: flex;
     flex-direction: column;
-  }
-  
-  /* CSS for code editor and output area */
-  #editor-container {
-    flex: 1;
-    border: 1px solid #ccc;
-    padding: 10px;
-    margin: 10px;
-    position: relative;
-  }
+}
 
-  /* CSS for feedback button */
-  #feedback-btn {
-    margin-top: 10px;
-  }
-  
-  
-  
-  #active-filename {
-    font-family: 'Consolas', 'Courier New', monospace; /* Use a monospaced font like Consolas or Courier New */
-    background-color: #282c34; /* Dark background color like in many code editors */
-    color: #abb2bf; /* Light text color */
-    padding: 8px; /* Add padding for spacing */
-    border: 1px solid #3e4451; /* Slightly darker border */
-    border-radius: 3px; /* Rounded corners */
-    white-space: nowrap; /* Prevent text from wrapping */
-    overflow: hidden; /* Hide overflow text */
-    text-overflow: ellipsis; /* Show ellipsis for long text */
-    font-size: 14px; /* Set the font size */
-  }
-  
-  #active-filename {
+/* Styles for active filename display */
+#active-filename {
     font-family: 'Courier New', monospace;
     font-size: 16px;
-    background-color: #f5f5f5; /* Light background color */
+    background-color: #f5f5f5;
     color: #333;
     border: 1px solid #ccc;
     border-radius: 4px;
@@ -412,7 +282,7 @@ nav button:hover {
     text-overflow: ellipsis;
 }
 
-/* CSS */
+/* Theme selector dropdown styles */
 #theme-selector {
     background-color: #ffffff;
     border: 1px solid #d1d1d1;
@@ -422,12 +292,12 @@ nav button:hover {
     margin: 0;
     padding: 10px 15px;
     height: 40px;
-    width: 100px; /* You can adjust the width as needed */
-    box-sizing: border-box; /* To include padding and border in the element's total width and height */
-    -webkit-appearance: none; /* Removes default chrome and safari style */
-    -moz-appearance: none; /* Removes default style Firefox */
-    appearance: none; /* Removes default browser style */
-    background-image: url('data:image/svg+xml;utf8,<svg fill="black" height="30" viewBox="0 0 24 24" width="30" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>'); /* Adding arrow icon */
+    width: 100px;
+    box-sizing: border-box;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: url('data:image/svg+xml;utf8,<svg fill="black" height="30" viewBox="0 0 24 24" width="30" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>');
     background-repeat: no-repeat;
     background-position-x: 95%;
     background-position-y: 15px;
@@ -438,24 +308,68 @@ nav button:hover {
     cursor: pointer;
 }
 
-#theme-selectora:focus {
+#theme-selector:focus {
     border-color: #5b9dd9;
     outline: none;
 }
 
-.CodeMirror-lint-marker-error,
-.CodeMirror-lint-marker-warning {
-    background-position: center left;
-    background-repeat: no-repeat;
-    background-size: contain;
-    color: #ff0000; /* for error text if needed */
+/* Toggle switch styles */
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    height: 34px;
 }
 
-.CodeMirror-lint-marker-error::before {
-    content: " "; /* creates a pseudo-element for the marker */
-    display: inline-block;
-    width: 16px; /* width of the error icon */
-    height: 16px; /* height of the error icon */
-    margin-right: 4px;
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
 
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    -webkit-transition: .4s;
+    transition: .4s;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 26px;
+    width: 26px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    -webkit-transition: .4s;
+    transition: .4s;
+}
+
+input:checked + .slider {
+    background-color: #2196F3;
+}
+
+input:focus + .slider {
+    box-shadow: 0 0 1px #2196F3;
+}
+
+input:checked + .slider:before {
+    -webkit-transform: translateX(26px);
+    -ms-transform: translateX(26px);
+    transform: translateX(26px);
+}
+
+/* Rounded sliders */
+.slider.round {
+    border-radius: 34px;
+}
+
+.slider.round:before {
+    border-radius: 50%;
 }

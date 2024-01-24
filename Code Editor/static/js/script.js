@@ -5,6 +5,7 @@ const perPage = 10;
 let lastSearchTerm = null;
 let searchCursor = null;
 let lintingEnabled = false; // Initialize linting as enabled by default
+let snippetDropdown; // Declare the snippetDropdown variable
 
 
 
@@ -284,15 +285,13 @@ document.getElementById('file-input').addEventListener('change', function(event)
 
         reader.onload = function(e) {
             const contents = e.target.result;
-
-            // Assuming 'editor' is your CodeMirror instance
             editor.setValue(contents);
+            document.getElementById("active-filename").textContent = `Active File: ${file.name}`;
         };
 
         reader.readAsText(file);
     }
 });
-
 
 
     
@@ -474,60 +473,58 @@ function triggerReplace(editor) {
 
 document.addEventListener('DOMContentLoaded', function () {
 
-// Initialize CodeMirror editor
-editor = CodeMirror.fromTextArea(document.getElementById("code-editor"), {
-    lineNumbers: true,
-    mode: "python", // Specify the mode for syntax highlighting (Python in this case)
-    theme: "Solarized Light",
-    autoCloseBrackets: true,
-    matchBrackets: true,
-    foldGutter: true,
-    gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter", "CodeMirror-lint-markers"],
-    smartIndent: true,
-    indentUnit: 4,
-    fullScreen: false,
-    viewportMargin: Infinity,
-    styleActiveLine: true,
-    placeholder: "Write your Python code here",
-    hintOptions: {
-        hint: (cm, options) => {
-            const cursor = cm.getCursor(); // Gets the cursor position
-            const token = cm.getTokenAt(cursor); // Gets the token at the cursor position
-            const start = token.start;
-            const end = cursor.ch; // End of the current word
 
-            // Filter the autocomplete words that start with the token string
-            const matchedWords = autocompleteWords.filter(word => word.startsWith(token.string));
+    // Initialize CodeMirror editor
+    editor = CodeMirror.fromTextArea(document.getElementById("code-editor"), {
+        lineNumbers: true,
+        mode: "python",
+        theme: "solarized",
+        autoCloseBrackets: true,
+        matchBrackets: true,
+        foldGutter: true,
+        gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter", "CodeMirror-lint-markers"],
+        smartIndent: true,
+        indentUnit: 4,
+        fullScreen: false,
+        viewportMargin: Infinity,
+        styleActiveLine: true,
+        placeholder: "Write your Python code here",
+        hintOptions: {
+            hint: (cm, options) => {
+                const cursor = cm.getCursor();
+                const token = cm.getTokenAt(cursor);
+                const start = token.start;
+                const end = cursor.ch;
+                const matchedWords = autocompleteWords.filter(word => word.startsWith(token.string));
 
-            return {
-                list: matchedWords,
-                from: CodeMirror.Pos(cursor.line, start),
-                to: CodeMirror.Pos(cursor.line, end),
-            };
+                return {
+                    list: matchedWords,
+                    from: CodeMirror.Pos(cursor.line, start),
+                    to: CodeMirror.Pos(cursor.line, end),
+                };
+            },
         },
-    },
-    lint: {
-        // Specify the linting function here
-        getAnnotations: (code) => {
-            // Call your lintPythonCode function to get linting results
-            const lintingResults = lintPythonCode(code);
-            
-            // Transform linting results to CodeMirror annotations format
-            return lintingResults.map((result) => ({
-                from: CodeMirror.Pos(result.row - 1, result.column),
-                to: CodeMirror.Pos(result.row - 1, result.column), // Add positions to highlight specific characters
-                message: result.message,
-                severity: result.type === 'error' ? 'error' : 'warning',
-            }));
+        lint: {
+            getAnnotations: (code) => {
+                const lintingResults = lintPythonCode(code);
+                return lintingResults.map((result) => ({
+                    from: CodeMirror.Pos(result.row - 1, result.column),
+                    to: CodeMirror.Pos(result.row - 1, result.column),
+                    message: result.message,
+                    severity: result.type === 'error' ? 'error' : 'warning',
+                }));
+            },
         },
-    },
-});
+    });
+
+    // Add the custom key map to the editor
+    editor.addKeyMap(customKeyMap);
+
+    // Add the "change" event listener after initializing the editor
+    editor.on("change", updateContextualSnippets);
 
 
-    
 
-        // Add the custom key map to the editor
-        editor.addKeyMap(customKeyMap);
 
     
     function findNext(editor, term) {
@@ -731,16 +728,6 @@ snippetDropdown.addEventListener('change', () => {
     }
 });
 
-    function updateContextualSnippets() {
-        const codeContext = determineCodeContext(editor);
-        // Filter and update the snippet dropdown
-        // For example, showing only 'For Loop' in a certain context
-        if (codeContext === 'loop') {
-            snippetDropdown.value = 'For Loop';
-        }
-    }
-
-    editor.on("change", updateContextualSnippets);
 
     // Example usage
     insertSnippet(editor, "for (var i=0; i<10; i++) {\n\t// code\n}");
@@ -776,44 +763,40 @@ function setupRunButton() {
     }
 }
 
-document.getElementById('feedback-btn').addEventListener('click', () => {
-    // 
-  });
   
-  function determineCodeContext(editor) {
+  function updateContextualSnippets() {
+    // Ensure snippetDropdown is defined in this function's scope
+    if (snippetDropdown) {
+        const currentContext = determineCodeContext(editor);
 
-    var cursor = editor.getCursor();
-    var token = editor.getTokenAt(cursor);
-    
+        snippetDropdown.options.forEach((option) => {
+            if (
+                (currentContext === 'function' && option.value === 'Function Snippet') ||
+                (currentContext === 'loop' && option.value === 'Loop Snippet')
+            ) {
+                // Show or highlight the option
+                option.style.display = '';
+            } else {
+                // Hide or de-emphasize the option
+                option.style.display = 'none';
+            }
+        });
+    }
+}
+
+function determineCodeContext(editor) {
+    const cursor = editor.getCursor();
+    const token = editor.getTokenAt(cursor);
+
     // Placeholder logic to determine the context
     if (token.string === 'def') {
         return 'function';
     } else if (token.string === 'for' || token.string === 'while') {
         return 'loop';
     }
-    
+
     // Return a default context if no specific context is found
     return 'default';
-}
-
-// Implement the actual logic to determine the coding context based on your application's needs
-
-function updateContextualSnippets() {
-    var currentContext = determineCodeContext(editor); // Call the function to determine the context
-    // Logic to filter and update the snippet dropdown based on the current context
-    // For example:
-    snippetDropdown.options.forEach((option) => {
-        if (currentContext === 'function' && option.value === 'Function Snippet') {
-            // Show or highlight the option
-            option.style.display = '';
-        } else if (currentContext === 'loop' && option.value === 'Loop Snippet') {
-            // Show or highlight the option
-            option.style.display = '';
-        } else {
-            // Hide or de-emphasize the option
-            option.style.display = 'none';
-        }
-    });
 }
 
 
@@ -981,6 +964,113 @@ function lintPythonCode(code) {
                     column: usages.index,
                 });
             }
+
+// Check for unused imports
+const importPattern = /import\s+(\w+)/g;
+const usedImports = new Set();
+
+let importMatch;
+while ((importMatch = importPattern.exec(code))) {
+    const moduleName = importMatch[1];
+    usedImports.add(moduleName);
+}
+
+// Identify unused imports
+const allImports = code.match(importPattern) || [];
+allImports.forEach(importStatement => {
+    const moduleName = importStatement.split(' ')[1];
+    if (!usedImports.has(moduleName)) {
+        lintingResults.push({
+            message: `Unused import: ${moduleName}.`,
+            type: 'warning',
+            row: code.split('\n').indexOf(importStatement) + 1,
+            column: 0,
+        });
+    }
+});
+
+// Check for missing 'return' statements in functions
+const functionDefinitionPattern = /def\s+(\w+)\s*\(.+?\):/g;
+const functionMatches = code.match(functionDefinitionPattern) || [];
+
+functionMatches.forEach(match => {
+    const functionName = match.split(' ')[1].split('(')[0];
+    if (!/\breturn\b/.test(code.split(match)[1])) {
+        lintingResults.push({
+            message: `Missing 'return' statement in function: ${functionName}.`,
+            type: 'warning',
+            row: code.split('\n').indexOf(match) + 1,
+            column: 0,
+        });
+    }
+
+    // Check for unused functions
+const functionDefinitions = code.match(/def\s+(\w+)\s*\(/g) || [];
+const usedFunctions = new Set();
+
+// Identify used functions (e.g., by checking if they are called)
+// You can implement this logic as needed
+
+functionDefinitions.forEach((functionDef) => {
+    const functionName = functionDef.match(/def\s+(\w+)\s*\(/)[1];
+
+    if (!usedFunctions.has(functionName)) {
+        lintingResults.push({
+            message: `Unused function: ${functionName}.`,
+            type: 'warning',
+            row: code.split('\n').findIndex((line) => line.includes(functionDef)) + 1,
+            column: 0,
+        });
+    }
+});
+
+// Check for magic numbers
+const magicNumberPattern = /\b\d+\b/g;
+const magicNumbers = code.match(magicNumberPattern) || [];
+
+magicNumbers.forEach((number) => {
+    lintingResults.push({
+        message: `Avoid magic number: ${number}.`,
+        type: 'warning',
+        row: code.split('\n').findIndex((line) => line.includes(number)) + 1,
+        column: code.indexOf(number),
+    });
+});
+
+// Check for unnecessary line breaks
+for (let i = 1; i < lines.length; i++) {
+    const currentLine = lines[i];
+    const previousLine = lines[i - 1];
+
+    if (currentLine.trim() === '' && previousLine.trim() === '') {
+        lintingResults.push({
+            message: `Unnecessary line break between lines ${i} and ${i + 1}.`,
+            type: 'warning',
+            row: i + 1,
+            column: 0,
+        });
+    }
+}
+
+// Check for inconsistent line lengths
+const maxLineLength = 100; // Adjust to your preferred maximum line length
+
+for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (line.length > maxLineLength) {
+        lintingResults.push({
+            message: `Line ${i + 1} exceeds the maximum line length of ${maxLineLength} characters.`,
+            type: 'warning',
+            row: i + 1,
+            column: maxLineLength + 1, // Suggested column limit
+        });
+    }
+}
+
+});
+
+
+
         });
     } else {
         console.error('Invalid code: not a string');
@@ -991,30 +1081,54 @@ function lintPythonCode(code) {
     return lintingResults;
 }
 
-// Function to toggle linting when the lint button is clicked
 
-    // Event listener for the "Lint" button
-    const lintButton = document.getElementById('lint-btn');
-    lintButton.addEventListener('click', toggleLinting);
-
+// Function to toggle linting using the keyboard shortcut
 // Function to toggle linting using the keyboard shortcut
 document.addEventListener('keydown', function (event) {
     // Check for the Ctrl+I (Cmd+I for Mac) key combination
     if ((event.ctrlKey || event.metaKey) && event.key === 'I' ) {
         event.preventDefault(); // Prevent the default behavior of the key combination
-        lintButton.click(); // Programmatically click the "Lint" button
+
+        // Get the lint switch element
+        const lintSwitch = document.getElementById('lint-switch');
+        if (lintSwitch) {
+            // Programmatically toggle the lint switch
+            lintSwitch.checked = !lintSwitch.checked;
+            // Call the toggleLinting function to apply the toggle effect
+            toggleLinting();
+        } else {
+            console.error('Lint switch not found');
+        }
     }
 });
-function toggleLinting() {
-    lintingEnabled = !lintingEnabled; // Toggle linting state
-    lintCode(editor); // Call the linting function
-    // Update the lint button text to reflect the linting state
-    const lintButton = document.getElementById('lint-btn');
-    lintButton.textContent = lintingEnabled ? 'Lint On' : 'Lint Off';
 
-    // Focus on the editor after toggling linting
-    editor.focus();
+function toggleLinting() {
+    // Get the checkbox element representing the lint switch
+    const lintSwitch = document.getElementById('lint-switch');
+
+    if (lintSwitch) {
+        // Toggle linting state based on the switch's checked property
+        lintingEnabled = lintSwitch.checked;
+
+        // Update the aria-pressed attribute for accessibility
+        lintSwitch.setAttribute('aria-pressed', String(lintingEnabled));
+
+        // Call the linting function if it was enabled
+        if (lintingEnabled) {
+            lintCode(editor);
+        }
+
+        // Focus on the editor after toggling linting
+        if (editor) {
+            editor.focus();
+        }
+    } else {
+        console.error('Lint switch not found');
+    }
 }
+
+document.getElementById('lint-switch').addEventListener('change', toggleLinting);
+
 
 // Custom linting function that checks the lintingEnabled flag
 function lintCode(editor) {
@@ -1029,14 +1143,70 @@ function lintCode(editor) {
 }
 
 function displayLintResults(lintResults) {
-    if (lintResults.length === 0) {
-        console.log('No linting errors or warnings found.');
-    } else {
-        lintResults.forEach(result => {
-            console.log(`${result.type.toUpperCase()}: Line ${result.row}: ${result.message}`);
+    const gutterMarkers = [];
+
+    lintResults.forEach(result => {
+        const { row, column, message, type } = result;
+
+        // Create a CSS class for the annotation based on the error type
+        const annotationClass = type === 'error' ? 'lint-error' : 'lint-warning';
+
+        // Add a gutter marker (icon) next to the line with the error/warning
+        gutterMarkers.push({
+            line: row - 1, // Adjust row to be zero-based
+            text: type === 'error' ? '●' : '○', // Customizable marker symbols
+            class: annotationClass,
         });
-    }
+
+        // Add an inline annotation (tooltip) to highlight the issue
+        try {
+            // Add an inline annotation (tooltip) to highlight the issue
+            editor.doc.markText(
+                { line: row - 1, ch: column - 1 }, // Adjust column to be zero-based
+                { line: row - 1, ch: column }, // Adjust column to highlight the character
+                {
+                    className: annotationClass,
+                    title: message, // Display the error/warning message as a tooltip
+                }
+            );
+        } catch (error) {
+            console.error("An error occurred while marking text:", error);
+        }
+        
+    });
+
+    // Clear existing gutter markers before updating
+    editor.clearGutter('CodeMirror-lint-markers');
+
+    // Add new gutter markers with icons
+    gutterMarkers.forEach(marker => {
+        editor.setGutterMarker(marker.line, 'CodeMirror-lint-markers', createGutterMarker(marker));
+    });
 }
+
+// Helper function to create a gutter marker element
+function createGutterMarker(marker) {
+    const markerElem = document.createElement('div');
+    markerElem.classList.add('lint-gutter-marker', marker.class);
+    markerElem.textContent = marker.text;
+    return markerElem;
+}
+
+const lintSwitch = document.getElementById('lint-switch');
+
+lintSwitch.addEventListener('change', function() {
+    lintingEnabled = this.checked; // Toggle linting state based on switch
+
+    // Call the linting function if it was enabled
+    if (lintingEnabled) {
+        lintCode(editor);
+    }
+
+    // Focus on the editor after toggling linting
+    editor.focus();
+});
+
+
 
 
 
