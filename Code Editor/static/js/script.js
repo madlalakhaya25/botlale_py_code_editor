@@ -6,6 +6,7 @@ let lastSearchTerm = null;
 let searchCursor = null;
 let lintingEnabled = false; // Initialize linting as enabled by default
 let snippetDropdown; // Declare the snippetDropdown variable
+let tabs = [];
 
 
 
@@ -186,7 +187,6 @@ function executePythonCode(code) {
 }
 
 // Saves the current code to a file on the server.
-// It takes the code and filePath as parameters and sends them to the '/save-file' endpoint.
 function saveFile(code, fileName) {
     // Create a Blob from the code
     var blob = new Blob([code], { type: 'text/plain' });
@@ -213,7 +213,6 @@ function saveFile(code, fileName) {
     window.URL.revokeObjectURL(url); // Fix the missing ( here
     document.body.removeChild(a);
 }
-
 
 document.getElementById('save-btn').addEventListener('click', function() {
     var code = editor.getValue(); // Assuming 'editor' is the code editor instance
@@ -1205,11 +1204,5 @@ lintSwitch.addEventListener('change', function() {
     // Focus on the editor after toggling linting
     editor.focus();
 });
-
-
-
-
-
-
 
     document.addEventListener('DOMContentLoaded', initializeApp);

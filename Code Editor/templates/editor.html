@@ -27,6 +27,8 @@
 <body>
 
     <div id="code-editor-header">
+        <img src="{{ url_for('static', filename='BOTLHALE.png') }}" alt="Image Description" style="width: 50px; height:50px;">
+
         <h2>PYTHON CODE EDITOR</h2>
   
     </div>
@@ -95,8 +97,11 @@
 
             <div id="active-filename"></div>
             <!-- Code Editor Textarea -->
+
+
             <div id="editor-container">
                 <textarea id="code-editor"></textarea>
+
 
                 <select id="snippet-dropdown">
                     <option value="">Select a Snippet...</option>

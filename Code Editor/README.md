@@ -17,7 +17,7 @@ Additional Key Features
 •	Responsive Design: Access the editor on various devices, adapting to different screen sizes.
 •	Customizable Themes: Personalize your coding environment with various editor themes.
 •	Code Execution History: Keep track of your code runs and outputs for better debugging.
-•	Real-time Code Linting: Get instant feedback on the quality and standards of your code.
+•	Real-time Code Linting Swtich: Get instant feedback on the quality and standards of your code.
 
 Keyboard Shortcuts
 
@@ -29,10 +29,12 @@ Enhance your coding efficiency with these handy keyboard shortcuts:
 •	Find: Ctrl + F (Windows/Linux), Cmd + F (Mac)
 •	Replace: Ctrl + H (Windows/Linux), Cmd + H (Mac)
 •	Go to Line: Ctrl + G (Windows/Linux), Cmd + G (Mac)
+•	Toggle Lint Switch: Ctrl + I (Windows/Linux), Cmd + G (Mac)
+
 
 Getting Started
 
-1.	Open the Playground: Launch the app in your web browser.
+1.	Open the Playground: Launch the app in your web browser. http://127.0.0.1:5000/ 
 2.	Code Away: Write or paste your Python code.
 3.	Execute: Run your code with a single click and see instant results.
 4.	Debug: Utilize our lint tool for error detection and correction.
@@ -42,11 +44,4 @@ Why Choose Python Playground?
 •	No Setup Required: Run code directly in your browser.
 •	Perfect for Learning: Experiment with Python in a fun and interactive way.
 
-Contributing
-
-Your contributions are welcome! Feel free to fork this project, make improvements, and submit a pull request.
-
-License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
 
