@@ -45,3 +45,27 @@ Why Choose Python Playground?
 •	Perfect for Learning: Experiment with Python in a fun and interactive way.
 
 
+## Linting and Editor Activation
+
+In this code editor, linting functionality is provided to help you identify and fix code issues. However, please note that as of the current implementation, there is a manual activation requirement for the editor after toggling linting.
+
+### How it works
+
+- To enable linting, toggle the lint switch by clicking on it or using the keyboard shortcut Ctrl+I (Cmd+I on Mac).
+
+- After enabling linting, the linting results will be computed and displayed on the code editor.
+
+- However, there is a manual activation step required to ensure that the editor responds immediately to the linting results. You can do this by:
+  
+  - Pressing any key within the editor.
+  - Clicking anywhere inside the editor.
+
+- Once activated, the editor will display linting annotations, such as error and warning markers, inline tooltips, and gutter icons, to help you identify code issues. Hover over the linting annotation.
+
+### Feedback and Improvements
+
+We are actively working to enhance the user experience and aim to eliminate the manual activation requirement in future updates. Your feedback and suggestions are highly appreciated as we strive to provide a smoother and more seamless coding experience.
+
+
+Thank you for using our code editor, and happy coding!
+

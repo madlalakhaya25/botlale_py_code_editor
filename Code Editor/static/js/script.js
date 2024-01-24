@@ -1,12 +1,11 @@
 // Editor is in the global scope if accessed by other functions
 let editor;
 let currentPage = 1; // first page
-const perPage = 10; 
 let lastSearchTerm = null;
 let searchCursor = null;
 let lintingEnabled = false; // Initialize linting as enabled by default
 let snippetDropdown; // Declare the snippetDropdown variable
-let tabs = [];
+
 
 
 
@@ -294,35 +293,7 @@ document.getElementById('file-input').addEventListener('change', function(event)
 
 
     
-    function updateFileExplorer(contents) {
-        
-        
-        const fileExplorer = document.getElementById('file-explorer'); // Get the file explorer container
-    
-        // Clear the existing contents of the file explorer
-        fileExplorer.innerHTML = '';
-    
-        contents.forEach(item => {
-            const listItem = document.createElement('li');
-            listItem.textContent = item.name;
-            
-            if (item.type === 'folder') {
-                // If it's a folder, add a folder icon or any other styling you prefer
-                listItem.classList.add('folder-item');
-            } else if (item.type === 'file') {
-                // If it's a file, add a file icon or any other styling you prefer
-                listItem.classList.add('file-item');
-            }
-    
-            // Attach a click event listener to handle opening files or folders
-            listItem.addEventListener('click', () => {
-                openFileOrFolder(item.name); // Assuming 'openFileOrFolder' handles opening files or folders
-            });
-    
-            // Append the list item to the file explorer
-            fileExplorer.appendChild(listItem);
-        });
-    }
+   
     
    import { autocompleteWords } from './autocompletewords.js';
 
@@ -1082,7 +1053,6 @@ for (let i = 0; i < lines.length; i++) {
 
 
 // Function to toggle linting using the keyboard shortcut
-// Function to toggle linting using the keyboard shortcut
 document.addEventListener('keydown', function (event) {
     // Check for the Ctrl+I (Cmd+I for Mac) key combination
     if ((event.ctrlKey || event.metaKey) && event.key === 'I' ) {
@@ -1126,22 +1096,31 @@ function toggleLinting() {
     }
 }
 
+
 document.getElementById('lint-switch').addEventListener('change', toggleLinting);
 
 
-// Custom linting function that checks the lintingEnabled flag
 function lintCode(editor) {
-    if (lintingEnabled) {
-        const code = editor.getValue();
-        const lintResults = lintPythonCode(code);
-        displayLintResults(lintResults);
-    } else {
-        // Clear linting annotations if linting is disabled
-        editor.clearGutter('CodeMirror-lint-markers');
+    if (!lintingEnabled) {
+        return []; // Return an empty array if linting is disabled
     }
+
+    const code = editor.getValue(); // Get the code from the editor
+    const lintingResults = lintPythonCode(code); // Perform linting synchronously
+
+    // Update the editor's annotations immediately
+    displayLintResults(editor, lintingResults);
+
+    return lintingResults; // Return linting results
 }
 
-function displayLintResults(lintResults) {
+
+function displayLintResults(editor, lintResults) {
+    if (!Array.isArray(lintResults)) {
+        console.error('Linting results is not an array.');
+        return;
+    }
+
     const gutterMarkers = [];
 
     lintResults.forEach(result => {
@@ -1182,6 +1161,7 @@ function displayLintResults(lintResults) {
         editor.setGutterMarker(marker.line, 'CodeMirror-lint-markers', createGutterMarker(marker));
     });
 }
+
 
 // Helper function to create a gutter marker element
 function createGutterMarker(marker) {
