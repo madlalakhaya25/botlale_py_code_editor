@@ -214,12 +214,22 @@ function saveFile(code, fileName) {
     document.body.removeChild(a);
 }
 
+// Updated event listener for the save button
 document.getElementById('save-btn').addEventListener('click', function() {
     var code = editor.getValue(); // Assuming 'editor' is the code editor instance
-    var fileName = 'my_document.txt'; 
-    saveFile(code, fileName);
+    var fileName = getActiveFilename(); // Get the filename from the active tab
+    if (fileName) {
+        saveFile(code, fileName);
+    } else {
+        console.error('No active file selected for saving.');
+    }
 });
 
+// Function to get the active filename from the tab
+function getActiveFilename() {
+    var activeTab = document.querySelector('.tab.active');
+    return activeTab ? activeTab.getAttribute('data-filename') : null;
+}
 
 // Function to toggle comment state for the selected range in the editor
 function toggleComment() {
@@ -361,12 +371,21 @@ var customKeyMap = {
     "Cmd-Enter": function(editor) { // For Mac users
         executePythonCode(editor.getValue());
     },
-    "Ctrl-S": function(editor) {
-        saveFile(editor.getValue(), 'filename.py'); // Replace 'filename.py' with your logic for file names
+    "Ctrl-S": function(instance) {
+        var code = instance.getValue();
+        var fileName = getActiveFilename();
+        if (fileName) {
+            saveFile(code, fileName);
+        }
     },
-    "Cmd-S": function(editor) { // For Mac users
-        saveFile(editor.getValue(), 'filename.py');
+    "Cmd-S": function(instance) { // For Mac users
+        var code = instance.getValue();
+        var fileName = getActiveFilename();
+        if (fileName) {
+            saveFile(code, fileName);
+        }
     },
+    
     "Ctrl-Shift-L": function(editor) {
         // Logic to trigger the load file functionality
         // This might require additional UI for the user to input a file path
