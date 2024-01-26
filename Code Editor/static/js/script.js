@@ -5,6 +5,7 @@ let lastSearchTerm = null;
 let searchCursor = null;
 let lintingEnabled = false; // Initialize linting as enabled by default
 let snippetDropdown; // Declare the snippetDropdown variable
+let fileContents = {}; // Object to store the content of each file
 
 
 
@@ -126,7 +127,7 @@ function openFile(filePath) {
             if (data.status === 'success') {
                 editor.setValue(data.content); // Load file content into the editor
                 // Use the filename from the response to update the active file display
-                document.getElementById("active-filename").textContent = `Active File: ${data.filename}`;
+                document.getElementById("data-filename").textContent = `Active File: ${data.filename}`;
             } else {
                 console.error('Open file error:', data.message);
             }
@@ -284,7 +285,7 @@ document.getElementById('file-input').addEventListener('change', function(event)
         reader.onload = function(e) {
             const contents = e.target.result;
             editor.setValue(contents);
-            document.getElementById("active-filename").textContent = `Active File: ${file.name}`;
+            document.getElementById("data-filename").textContent = `Active File: ${file.name}`;
         };
 
         reader.readAsText(file);
@@ -487,13 +488,36 @@ document.addEventListener('DOMContentLoaded', function () {
         },
     });
 
+
+
     // Add the custom key map to the editor
     editor.addKeyMap(customKeyMap);
 
     // Add the "change" event listener after initializing the editor
-    editor.on("change", updateContextualSnippets);
+    editor.on("change", updateContextualSnippets, updateFileContent);
 
-
+// Event listener for the close-tab functionality
+document.addEventListener('click', function(event) {
+    if (event.target.classList.contains('close-tab')) {
+        const tab = event.target.parentNode;
+        const isActive = tab.classList.contains('active');
+        const filename = tab.getAttribute('data-filename');
+        
+        // Remove the tab and its content
+        delete fileContents[filename];
+        tab.remove();
+        
+        // Select another tab if the closed one was active
+        if (isActive) {
+            const allTabs = document.querySelectorAll('.tab');
+            if (allTabs.length > 0) {
+                selectTab(allTabs[0]);
+            } else {
+                editor.setValue(''); // Clear editor if no tabs left
+            }
+        }
+    }
+});
 
 
     
@@ -804,7 +828,7 @@ function createNewDocument() {
     editor.setValue("");
 
     // Update the active filename to indicate it's a new untitled document
-    document.getElementById("active-filename").textContent = "Active File: Untitled";
+    document.getElementById("data-filename").textContent = "Active File: Untitled";
 }
 
 // Event listener for the "New File" button
@@ -1184,5 +1208,238 @@ lintSwitch.addEventListener('change', function() {
     // Focus on the editor after toggling linting
     editor.focus();
 });
+
+document.addEventListener('DOMContentLoaded', (event) => {
+    const addTabButton = document.querySelector('.add-tab');
+    addTabButton.addEventListener('click', addNewTab);
+  });
+  
+  function addNewTab() {
+    const tabContainer = document.getElementById('tab-container');
+    const newTab = document.createElement('div');
+    const fileName = `untitled${document.querySelectorAll('.tab').length}.py`;
+    newTab.className = 'tab';
+    newTab.setAttribute('data-filename', fileName);
+    newTab.innerHTML = `
+        <span class="tab-name">${fileName}</span>
+        <span class="rename-tab">✏️</span>
+        <span class="close-tab">×</span>
+    `;
+
+    // Add event listeners to the newly created tab
+    newTab.querySelector('.rename-tab').addEventListener('click', function(event) {
+        event.stopPropagation(); // Prevent triggering the tab selection
+        makeTabEditable(newTab);
+    });
+    newTab.querySelector('.close-tab').addEventListener('click', function(event) {
+        event.stopPropagation(); // Prevent triggering the tab selection
+        removeTab(newTab);
+    });
+    newTab.addEventListener('click', function() { selectTab(newTab); });
+
+    tabContainer.insertBefore(newTab, tabContainer.lastElementChild);
+
+    // Initialize the content for the new file
+    fileContents[fileName] = '';
+    selectTab(newTab);
+}
+
+
+function removeTab(tabElement) {
+    const isActive = tabElement.classList.contains('active');
+    const filename = tabElement.getAttribute('data-filename');
+    tabElement.remove();
+    delete fileContents[filename];
+
+    // If the removed tab was active, select another tab
+    if (isActive) {
+        const allTabs = document.querySelectorAll('.tab');
+        if (allTabs.length > 0) {
+            selectTab(allTabs[0]);
+        } else {
+            editor.setValue(''); // Clear editor if no tabs left
+        }
+    }
+}
+  
+function selectTab(tabElement) {
+    // Save current content before switching
+    const currentFilename = document.querySelector('.tab.active').getAttribute('data-filename');
+    fileContents[currentFilename] = editor.getValue();
+
+    // Deselect all tabs
+    document.querySelectorAll('.tab').forEach(tab => {
+        tab.classList.remove('active');
+    });
+
+    // Select the clicked tab
+    tabElement.classList.add('active');
+
+    // Load the content for the selected tab
+    const filename = tabElement.getAttribute('data-filename');
+    editor.setValue(fileContents[filename] || '');
+}
+
+function updateFileContent() {
+    const currentFilename = document.querySelector('.tab.active').getAttribute('data-filename');
+    fileContents[currentFilename] = editor.getValue();
+}
+  
+  // Update the tab click event listener for all current and future tabs
+  document.getElementById('tab-container').addEventListener('click', function(event) {
+    if (event.target.classList.contains('tab')) {
+      selectTab(event.target);
+    }
+  });
+  
+  function enableTabRename(tabElement) {
+    let tabNameElement = tabElement.querySelector('.tab-name');
+    let currentName = tabNameElement.textContent;
+  
+    // Create an input field
+    let inputField = document.createElement('input');
+    inputField.type = 'text';
+    inputField.value = currentName;
+    inputField.className = 'tab-rename-input';
+  
+    // Replace the tab name with the input field
+    tabElement.replaceChild(inputField, tabNameElement);
+  
+    // Focus on the input and select the text
+    inputField.focus();
+    inputField.select();
+  
+    // Event to handle renaming after editing
+    inputField.addEventListener('blur', () => finishTabRename(tabElement, inputField));
+    inputField.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        inputField.blur(); // Trigger the blur event when Enter is pressed
+      }
+    });
+  }
+  
+  function finishTabRename(tabElement, inputField) {
+    let newName = inputField.value.trim();
+    let oldName = tabElement.getAttribute('data-filename');
+  
+    if (newName && newName !== oldName) {
+      // Update the filename and tab display
+      tabElement.setAttribute('data-filename', newName);
+      let tabNameElement = document.createElement('span');
+      tabNameElement.className = 'tab-name';
+      tabNameElement.textContent = newName;
+      tabElement.replaceChild(tabNameElement, inputField);
+  
+      // Update the file contents object
+      fileContents[newName] = fileContents[oldName];
+      delete fileContents[oldName];
+    } else {
+      // If the name is unchanged or empty, revert to the original name
+      let tabNameElement = document.createElement('span');
+      tabNameElement.className = 'tab-name';
+      tabNameElement.textContent = oldName;
+      tabElement.replaceChild(tabNameElement, inputField);
+    }
+  }
+  
+  // Event listener for the rename icon
+  document.addEventListener('click', function(event) {
+    if (event.target.classList.contains('rename-tab')) {
+      let tabElement = event.target.closest('.tab');
+      enableTabRename(tabElement);
+    }
+  });
+    
+  
+  // Implement these functions based on how you're storing file contents
+  function getFileContent(filename) {
+    // Fetch the content for the file
+    return ''; // Placeholder
+  }
+  
+  function setEditorContent(content) {
+    editor.setValue(content);
+  }
+  
+  // You need to handle the click on the close button for tabs
+  document.addEventListener('click', function(event) {
+    if (event.target.classList.contains('close-tab')) {
+      const tab = event.target.parentNode;
+      const isActive = tab.classList.contains('active');
+      const nextTab = tab.nextElementSibling || tab.previousElementSibling;
+      if (isActive && nextTab) {
+        selectTab(nextTab);
+      }
+      tab.remove();
+      // You also need to implement removeFileContent
+      removeFileContent(tab.getAttribute('data-filename'));
+    }
+  });
+  
+  function removeFileContent(filename) {
+    // Replace with the correct server endpoint and request method
+    fetch('/delete-file', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ filename: filename }),
+    })
+    .then(response => response.json())
+    .then(data => {
+      console.log('File deleted:', data);
+    })
+    .catch((error) => {
+      console.error('Error deleting file:', error);
+    });
+  }
+  
+// Function to make the tab name editable
+function makeTabEditable(tabElement) {
+    let tabNameSpan = tabElement.querySelector('.tab-name');
+    let input = document.createElement('input');
+    input.type = 'text';
+    input.value = tabNameSpan.textContent;
+    input.className = 'tab-input';
+  
+    tabElement.replaceChild(input, tabNameSpan);
+    input.focus();
+  
+    input.addEventListener('blur', () => finishEdit(tabElement, input), { once: true });
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        input.blur();
+      }
+    });
+  }
+  
+  // Function to finish editing the tab name
+  function finishEdit(tabElement, input) {
+    let newTabNameSpan = document.createElement('span');
+    newTabNameSpan.className = 'tab-name';
+    newTabNameSpan.textContent = input.value.trim();
+  
+    tabElement.replaceChild(newTabNameSpan, input);
+  
+    let oldFilename = tabElement.getAttribute('data-filename');
+    let newFilename = newTabNameSpan.textContent;
+    if (newFilename && newFilename !== oldFilename) {
+      tabElement.setAttribute('data-filename', newFilename);
+      fileContents[newFilename] = fileContents[oldFilename] || '';
+      delete fileContents[oldFilename];
+    }
+  }
+  
+  // Event listener for clicks on the rename icon
+  document.addEventListener('click', function(event) {
+    if (event.target.classList.contains('rename-tab')) {
+      let tabElement = event.target.closest('.tab');
+      makeTabEditable(tabElement);
+      event.stopPropagation(); // Prevent other click events
+    }
+  });
+  
+  
+  
 
     document.addEventListener('DOMContentLoaded', initializeApp);

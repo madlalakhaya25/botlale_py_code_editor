@@ -385,3 +385,47 @@ input:checked + .slider:before {
 .slider.round:before {
     border-radius: 50%;
 }
+
+#tab-container {
+    background: #f9f9f9;
+    border-bottom: 1px solid #ddd;
+    padding-left: 5px;
+  }
+  
+  .tab {
+    display: inline-block;
+    padding: 5px 10px;
+    margin-right: 5px;
+    background: #eee;
+    cursor: pointer;
+    border: 1px solid #ddd;
+    border-bottom: none;
+  }
+  
+  .tab.active {
+    background: #fff;
+    border-top: 2px solid #38a8de;
+  }
+  
+  .tab .close-tab {
+    margin-left: 10px;
+    color: #666;
+    cursor: pointer;
+  }
+  
+  .add-tab {
+    display: inline-block;
+    padding: 5px 10px;
+    margin-right: 5px;
+    background: #38a8de;
+    color: #fff;
+    cursor: pointer;
+    font-size: 24px;
+    line-height: 14px;
+  }
+
+  .rename-tab {
+    margin-left: 5px;
+    cursor: pointer;
+  }
+  

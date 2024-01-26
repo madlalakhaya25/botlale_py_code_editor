@@ -7,6 +7,27 @@ import tempfile  # Import tempfile module
 
 app = Flask(__name__)
 
+@app.route('/delete-file', methods=['POST'])
+def delete_file():
+    data = request.json
+    file_path = pathlib.Path(DIRECTORY_PATH / data['filename'])
+    
+    # Ensure the file path is safe to manipulate
+    if is_safe_path(DIRECTORY_PATH, file_path):
+        try:
+            # Remove the file if it exists
+            if file_path.is_file():
+                file_path.unlink()
+                return jsonify({'status': 'success', 'message': f'File {data["filename"]} deleted successfully.'})
+            else:
+                return jsonify({'status': 'error', 'message': 'File does not exist.'}), 404
+        except Exception as e:
+            # Return a server error response if something goes wrong
+            return jsonify({'status': 'error', 'message': str(e)}), 500
+    else:
+        # Return a client error response if the path is not safe
+        return jsonify({'status': 'error', 'message': 'Unsafe file path'}), 400
+
 @app.route('/lint', methods=['POST'])
 def lint_code():
     code = request.data.decode('utf-8')

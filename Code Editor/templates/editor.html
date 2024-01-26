@@ -91,13 +91,20 @@
 
 </div>
 
+<!-- Insert the tab functionality here -->
+<div id="tab-container">
+    <div class="tab active" data-filename="main.py">
+        <span class="tab-name">main.py</span>
+        <span class="rename-tab">✏️</span>
+        <span class="close-tab">×</span>
+      </div>
+    <!-- New tabs will be added here -->
+    <div class="add-tab" onclick="addNewTab()">+</div>
+  </div>
+
 
     <div id="container">
         <section id="main">
-
-            <div id="active-filename"></div>
-            <!-- Code Editor Textarea -->
-
 
             <div id="editor-container">
                 <textarea id="code-editor"></textarea>
