@@ -303,13 +303,9 @@ document.getElementById('file-input').addEventListener('change', function(event)
 });
 
 
-    
-   
-    
+
    import { autocompleteWords } from './autocompletewords.js';
 
-    // Now you can use the autocompleteWords array in your main script
-    console.log(autocompleteWords); // Example usage
 
 // Wrap your event listener code in a function
 function attachEditorEventListeners() {
@@ -723,7 +719,20 @@ document.getElementById('replace-box').addEventListener('keypress', function(eve
         'List Comprehension': '[x for x in iterable]',
         'Dictionary Comprehension': '{key: value for key, value in iterable}',
         'Set Comprehension': '{expression for item in iterable}',
+        'Variable Assignment': 'variable_name = value',
+        'Arithmetic Operations': 'addition = a + b\nsubtraction = a - b\nmultiplication = a * b\ndivision = a / b\nmodulus = a % b\nexponentiation = a ** b',
+        'String Concatenation': 'full_string = "Hello, " + "world!"',
+        'List Operations': 'my_list = [1, 2, 3]\nmy_list.append(4)\nelement = my_list[0]',
+        'Dictionary Operations': 'my_dict = {"key": "value"}\nmy_dict["new_key"] = "new_value"\nvalue = my_dict["key"]',
+        'Set Operations': 'my_set = {1, 2, 3}\nmy_set.add(4)',
+        'Tuple Creation': 'my_tuple = (1, 2, 3)',
+        'Boolean Expressions': 'true_condition = True\nfalse_condition = False\nlogical_and = true_condition and false_condition\nlogical_or = true_condition or false_condition\nlogical_not = not true_condition',
+        'Conditional Expressions (Ternary Operator)': 'result = value1 if condition else value2',
+        'Loop Control Statements - Break': 'for i in range(10):\n\tif i == 5:\n\t\tbreak',
+        'Loop Control Statements - Continue': 'for i in range(10):\n\tif i % 2 == 0:\n\t\tcontinue\n\tprint(i)'
     };
+    
+    
 
     const snippetDropdown = document.getElementById('snippet-dropdown');
     Object.keys(snippets).forEach(key => {
@@ -743,7 +752,7 @@ snippetDropdown.addEventListener('change', () => {
 
 
     // Example usage
-    insertSnippet(editor, "for (var i=0; i<10; i++) {\n\t// code\n}");
+    insertSnippet(editor, "for i in range(10):\n\tprint(i)");
 
     // Attach event listener for 'change' on the editor
     editor.on("change", parseAndDisplayFunctions);
@@ -1370,16 +1379,7 @@ function updateFileContent() {
   });
     
   
-  // Implement these functions based on how you're storing file contents
-  function getFileContent(filename) {
-    // Fetch the content for the file
-    return ''; // Placeholder
-  }
-  
-  function setEditorContent(content) {
-    editor.setValue(content);
-  }
-  
+
   // You need to handle the click on the close button for tabs
   document.addEventListener('click', function(event) {
     if (event.target.classList.contains('close-tab')) {
