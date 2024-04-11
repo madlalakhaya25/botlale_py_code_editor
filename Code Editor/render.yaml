@@ -1,0 +1,4 @@
+services:
+  - name: Python Code Editor
+    env: python
+    startCommand: python /app.py
